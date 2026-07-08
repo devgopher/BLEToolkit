@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit", "BLE.Toolkit\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit.Windows", "BLE.Toolkit.Windows\BLE.Toolkit.Windows.csproj", "{526C0310-FE88-4B70-8795-FF85AED093EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Messages", "BLE.Messages\BLE.Messages.csproj", "{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{526C0310-FE88-4B70-8795-FF85AED093EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{526C0310-FE88-4B70-8795-FF85AED093EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{526C0310-FE88-4B70-8795-FF85AED093EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
