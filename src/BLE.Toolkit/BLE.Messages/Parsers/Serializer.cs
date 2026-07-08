@@ -4,41 +4,33 @@ public class Serializer : ISerializer
 {
     /// <summary>
     /// Serializes the provided message into a BLE frame.
-    /// Format: [type(1)][bleVersion(1)][payload(variable)]
+    /// Format: [type(1)][id][data]
+    /// BLE4 id: 4 bytes, BLE5 id: 32 bytes.
     /// </summary>
     public byte[] Serialize(MessageType type, byte bleVersion, byte[] id, byte[] data)
     {
         switch (bleVersion)
         {
-            // Frame layout used by your deserializer:
-            // - For BLE4: id = input[1..4] => 4 bytes, data begins at index 4
-            // - For BLE5: id = input[1..33] => 32 bytes, data begins at index 33
-            // For BLE4 your deserializer expects:
-            // payload: id(4 bytes) + data(rest)
             case 4 when id.Length != 4:
                 throw new ArgumentException("For BLE4, Id must be 4 bytes.");
             case 4:
             {
-                var result = new byte[2 + id.Length + data.Length];
+                var result = new byte[1 + id.Length + data.Length];
                 result[0] = (byte)type;
-                result[1] = bleVersion;
 
-                Buffer.BlockCopy(id, 0, result, 2, id.Length);
-                Buffer.BlockCopy(data, 0, result, 2 + id.Length, data.Length);
+                Buffer.BlockCopy(id, 0, result, 1, id.Length);
+                Buffer.BlockCopy(data, 0, result, 1 + id.Length, data.Length);
                 return result;
             }
-            // For BLE5 your deserializer expects:
-            // payload: id(32 bytes) + data(rest)
             case 5 when id.Length != 32:
                 throw new ArgumentException("For BLE5, Id must be 32 bytes.");
             case 5:
             {
-                var result = new byte[2 + id.Length + data.Length];
+                var result = new byte[1 + id.Length + data.Length];
                 result[0] = (byte)type;
-                result[1] = bleVersion;
 
-                Buffer.BlockCopy(id, 0, result, 2, id.Length);
-                Buffer.BlockCopy(data, 0, result, 2 + id.Length, data.Length);
+                Buffer.BlockCopy(id, 0, result, 1, id.Length);
+                Buffer.BlockCopy(data, 0, result, 1 + id.Length, data.Length);
                 return result;
             }
             default:

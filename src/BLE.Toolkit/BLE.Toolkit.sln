@@ -1,5 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+#
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit.Test", "BLE.Toolkit.Test\BLE.Toolkit.Test.csproj", "{43EFAC8F-FE4D-400A-BD81-A402187730D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit.Interfaces", "BLE.Toolkit.Interfaces\BLE.Toolkit.Interfaces.csproj", "{5FC06ED1-E190-4746-89D7-1DF7D88BB882}"
@@ -9,6 +10,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit.Windows", "BLE.Toolkit.Windows\BLE.Toolkit.Windows.csproj", "{526C0310-FE88-4B70-8795-FF85AED093EE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Messages", "BLE.Messages\BLE.Messages.csproj", "{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Messages.Tests", "BLE.Messages.Tests\BLE.Messages.Tests.csproj", "{FA76887F-66E6-4ABC-8DC1-6F174A933C8A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{9D43BA2B-DB3A-40CD-A187-0351EA0E6BF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,5 +41,12 @@ Global
 		{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B9CCCAB5-834F-4C3B-B16D-4E7CA4A9A7BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA76887F-66E6-4ABC-8DC1-6F174A933C8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA76887F-66E6-4ABC-8DC1-6F174A933C8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA76887F-66E6-4ABC-8DC1-6F174A933C8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA76887F-66E6-4ABC-8DC1-6F174A933C8A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FA76887F-66E6-4ABC-8DC1-6F174A933C8A} = {9D43BA2B-DB3A-40CD-A187-0351EA0E6BF1}
 	EndGlobalSection
 EndGlobal
