@@ -1,7 +1,7 @@
 ﻿namespace BLE.Messages;
 
 /// <summary>
-/// Supported message types for BLE communication.
+///     Supported message types for BLE communication.
 /// </summary>
 public enum MessageType : byte
 {

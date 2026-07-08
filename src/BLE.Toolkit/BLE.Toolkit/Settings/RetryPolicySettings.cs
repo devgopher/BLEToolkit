@@ -1,7 +1,7 @@
 ﻿namespace BLE.Toolkit.Settings;
 
 /// <summary>
-/// Retry policy settings
+///     Retry policy settings
 /// </summary>
 public class RetryPolicySettings
 {

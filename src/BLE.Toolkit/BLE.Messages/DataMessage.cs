@@ -1,24 +1,28 @@
 ﻿namespace BLE.Messages;
 
 /// <summary>
-/// Represents a BLE message carrying application data.
+///     Represents a BLE message carrying application data.
 /// </summary>
 public class DataMessage : Message<DataMessage>
 {
     /// <summary>
-    /// Creates a new <see cref="DataMessage"/> instance.
+    ///     Creates a new <see cref="DataMessage" /> instance.
     /// </summary>
     /// <param name="id">Message identifier.</param>
     /// <param name="data">Payload data.</param>
-    protected DataMessage(byte[] id, byte[] data) : base(id, data, MessageType.Data)
+    protected DataMessage(byte[] id, byte[] data, byte bleVersion) : base(id, data, MessageType.Data, bleVersion)
     {
     }
 
     /// <summary>
-    /// Factory method for creating a <see cref="DataMessage"/>.
+    ///     Factory method for creating a <see cref="DataMessage" />.
     /// </summary>
     /// <param name="id">Message identifier.</param>
     /// <param name="data">Payload data.</param>
-    /// <returns>A new <see cref="DataMessage"/>.</returns>
-    public static DataMessage Create(byte[] id, byte[] data) => new DataMessage(id, data);
+    /// <param name="bleVersion">BLE version</param>
+    /// <returns>A new <see cref="DataMessage" />.</returns>
+    public static DataMessage Create(byte[] id, byte[] data, byte bleVersion)
+    {
+        return new DataMessage(id, data, bleVersion);
+    }
 }

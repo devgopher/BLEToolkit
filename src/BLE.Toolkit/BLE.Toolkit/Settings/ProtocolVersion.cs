@@ -1,7 +1,7 @@
 ﻿namespace BLE.Toolkit.Settings;
 
 /// <summary>
-/// Protocol version
+///     Protocol version
 /// </summary>
 public enum ProtocolVersion
 {
