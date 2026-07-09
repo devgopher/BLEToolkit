@@ -1,29 +1,39 @@
-﻿using BLE.Toolkit.Interfaces.Transmitter;
+﻿using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.Storage.Streams;
 using BLE.Toolkit.Settings;
-using BLE.Toolkit.Transmitter;
 using Microsoft.Extensions.Options;
 
 namespace BLE.Toolkit.Windows.Transmitter;
 
 public class ServerNotifyTransmitter(IOptionsMonitor<TransmitterSettings> settings) : BasicBleTransmitter(settings)
 {
-    public override Task StartAsync(CancellationToken cancellationToken)
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
-    }
-
-    public override Task StopAsync(CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
+        await InitializeGattServerAsync(cancellationToken);
+        StartGattAdvertising();
+        StartAdvertisementPublishing();
+        await base.StartAsync(cancellationToken);
     }
 
     protected override void InnerTransmit(byte[] data)
     {
-        throw new NotImplementedException();
+        if (LocalTransmitCharacteristic == null)
+            return;
+
+        ExecuteWithRetry(() =>
+        {
+            LocalTransmitCharacteristic
+                .NotifyValueAsync(CreateBuffer(data))
+                .AsTask()
+                .GetAwaiter()
+                .GetResult();
+        });
     }
 
-    public override void Transmit(byte[] data)
+    private static IBuffer CreateBuffer(byte[] data)
     {
-        throw new NotImplementedException();
+        var writer = new DataWriter();
+        writer.WriteBytes(data);
+        return writer.DetachBuffer();
     }
 }
