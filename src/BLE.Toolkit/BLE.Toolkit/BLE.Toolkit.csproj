@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\BLE.Toolkit.Interfaces\BLE.Toolkit.Interfaces.csproj"/>
+    </ItemGroup>
+
 </Project>

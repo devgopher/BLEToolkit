@@ -4,5 +4,5 @@ namespace BLE.Toolkit.Interfaces.Receiver;
 
 public interface IReceiver : IHostedService
 {
-    public List<byte[]> Output { get; }
+    public bool TryGetLast(out byte[] data);
 }

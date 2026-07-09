@@ -4,8 +4,8 @@ namespace BLE.Messages.Tests;
 
 public class DeserializerTests
 {
-    private readonly Serializer _serializer = new();
     private readonly Deserializer _deserializer = new();
+    private readonly Serializer _serializer = new();
 
     [Theory]
     [InlineData((byte)4)]
