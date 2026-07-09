@@ -1,9 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <SupportedOSPlatformVersion>10.0.18362.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\BLE.Toolkit.Interfaces\BLE.Toolkit.Interfaces.csproj" />
+      <ProjectReference Include="..\BLE.Toolkit\BLE.Toolkit.csproj" />
+    </ItemGroup>
 
 </Project>

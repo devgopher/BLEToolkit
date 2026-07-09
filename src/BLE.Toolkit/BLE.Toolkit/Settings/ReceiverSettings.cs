@@ -8,4 +8,5 @@ public class ReceiverSettings
     public ProtocolVersion ProtocolVersion { get; init; } = ProtocolVersion.BLE4;
     public int ReceiveQueueSize { get; init; } = 1024;
     public QueueFilledStrategy QueueFilledStrategy { get; init; }
+    public GattServiceSettings ServiceSettings { get; init; } = new();
 }
