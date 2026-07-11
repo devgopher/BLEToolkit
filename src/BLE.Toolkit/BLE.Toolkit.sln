@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 #
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit.Test", "BLE.Toolkit.Test\BLE.Toolkit.Test.csproj", "{43EFAC8F-FE4D-400A-BD81-A402187730D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit.Test.Windows", "BLE.Toolkit.Test.Windows\BLE.Toolkit.Test.Windows.csproj", "{43EFAC8F-FE4D-400A-BD81-A402187730D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BLE.Toolkit.Interfaces", "BLE.Toolkit.Interfaces\BLE.Toolkit.Interfaces.csproj", "{5FC06ED1-E190-4746-89D7-1DF7D88BB882}"
 EndProject

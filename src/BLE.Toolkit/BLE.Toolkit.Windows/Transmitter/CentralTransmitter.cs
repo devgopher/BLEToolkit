@@ -15,11 +15,13 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings) :
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        StartAdvertisementScanning();
+        InitAdvertisementScanning();
 
         if (AdvertisementWatcher != null)
             AdvertisementWatcher.Received += OnAdvertisementReceived;
 
+        StartAdvertisementScanning();
+        
         StartAdvertisementPublishing();
         await base.StartAsync(cancellationToken);
     }

@@ -26,7 +26,7 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
     };
 
-    protected void StartAdvertisementScanning()
+    protected void InitAdvertisementScanning()
     {
         var advertising = TransmitterSettingsMonitor.CurrentValue.Advertising;
         if (!advertising.Enabled)
@@ -36,7 +36,11 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         {
             ScanningMode = MapScanningMode(advertising.Mode)
         };
-        AdvertisementWatcher.Start();
+    }
+
+    protected void StartAdvertisementScanning()
+    {
+        AdvertisementWatcher?.Start();
     }
 
     private void EnsureAdvertisementPublisher()
