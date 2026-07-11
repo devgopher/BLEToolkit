@@ -22,6 +22,21 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
         ExecuteQueueFillStrategy(data);
     }
 
+    private TimeSpan GetPeriod()
+    {
+        if (settings.CurrentValue.RateLimiting is { Enabled: true })
+            return settings.CurrentValue.RateLimiting?.RatePeriod switch
+            {
+                RatePeriod.Second => TimeSpan.FromSeconds(1),
+                RatePeriod.Minute => TimeSpan.FromMinutes(1),
+                RatePeriod.Hour => TimeSpan.FromHours(1),
+                RatePeriod.Day => TimeSpan.FromDays(1),
+                _ => TimeSpan.FromSeconds(1)
+            };
+        else
+            return TimeSpan.FromSeconds(1);
+    }
+
     /// <summary>
     ///     Starts the transmit loop that dequeues and sends frames until cancellation is requested.
     /// </summary>
@@ -29,12 +44,34 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
     /// <returns>A completed task.</returns>
     public virtual Task StartAsync(CancellationToken cancellationToken)
     {
+        var delta = RateLimitingPause();
+
         while (!cancellationToken.IsCancellationRequested)
+        {
+            DoRateLimiting(delta);
+
             // If there is queued data, send it using the protocol-specific transport.
             if (TransmitQueue.TryDequeue(out var data))
                 InnerTransmit(data);
+        }
 
         return Task.CompletedTask;
+    }
+
+    private void DoRateLimiting(TimeSpan delta)
+    {
+        // Rate limiting
+        if (settings.CurrentValue.RateLimiting is { Enabled: true }) 
+            Thread.Sleep(delta.Add(TimeSpan.FromMilliseconds(1)));
+    }
+
+    private TimeSpan RateLimitingPause()
+    {
+        var delta = TimeSpan.Zero;
+
+        if (settings.CurrentValue.RateLimiting is { Enabled: true })
+            delta = TimeSpan.FromMilliseconds(GetPeriod().TotalMilliseconds / settings.CurrentValue.RateLimiting.Limit);
+        return delta;
     }
 
     /// <summary>

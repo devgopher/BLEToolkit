@@ -11,4 +11,5 @@ public class TransmitterSettings
     public QueueFilledStrategy QueueFilledStrategy { get; init; }
     public AdvertisingSettings Advertising { get; init; } = new();
     public GattServiceSettings ServiceSettings { get; init; } = new();
+    public RateLimitingSettings? RateLimiting { get; init; }
 }
