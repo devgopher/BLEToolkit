@@ -1,7 +1,7 @@
-using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using Windows.Storage.Streams;
 using BLE.Toolkit.Settings;
 using BLE.Toolkit.Transmitter;
 using Microsoft.Extensions.Options;
@@ -15,7 +15,6 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
     private IOptionsMonitor<TransmitterSettings> TransmitterSettingsMonitor { get; } = settings;
 
     protected BluetoothLEAdvertisementWatcher? AdvertisementWatcher { get; private set; }
-    private BluetoothLEAdvertisementPublisher? AdvertisementPublisher { get; set; }
     private GattServiceProvider? BleServiceProvider { get; set; }
     protected GattLocalCharacteristic? LocalTransmitCharacteristic { get; private set; }
 
@@ -43,17 +42,6 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         AdvertisementWatcher?.Start();
     }
 
-    private void EnsureAdvertisementPublisher()
-    {
-        if (AdvertisementPublisher != null)
-            return;
-
-        AdvertisementPublisher = new BluetoothLEAdvertisementPublisher();
-
-        var serviceSetting = GetPrimaryServiceSetting();
-        if (serviceSetting != null)
-            AdvertisementPublisher.Advertisement.ServiceUuids.Add(Guid.Parse(serviceSetting.ServiceUuid));
-    }
 
     protected void StartAdvertisementPublishing()
     {
@@ -61,10 +49,13 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         if (!advertising.Enabled)
             return;
 
-        EnsureAdvertisementPublisher();
+        var gattAdvertising = new GattServiceProviderAdvertisingParameters
+        {
+            IsDiscoverable = true,
+            IsConnectable = true
+        };
 
-        if (AdvertisementPublisher!.Status == BluetoothLEAdvertisementPublisherStatus.Created)
-            AdvertisementPublisher.Start();
+        BleServiceProvider?.StartAdvertising(gattAdvertising);
     }
     
     protected async Task InitializeGattServerAsync(CancellationToken cancellationToken)
@@ -130,7 +121,8 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
     {
         StopAdvertisementScanning();
         StopAdvertisementPublishing();
-        StopGattServer(cancellationToken);
+        StopGattServer();
+        
         return base.StopAsync(cancellationToken);
     }
 
@@ -140,15 +132,9 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         AdvertisementWatcher = null;
     }
 
-    private void StopAdvertisementPublishing()
-    {
-        if (AdvertisementPublisher?.Status == BluetoothLEAdvertisementPublisherStatus.Started)
-            AdvertisementPublisher.Stop();
+    private void StopAdvertisementPublishing() => BleServiceProvider?.StopAdvertising();
 
-        AdvertisementPublisher = null;
-    }
-
-    private void StopGattServer(CancellationToken cancellationToken)
+    private void StopGattServer()
     {
         if (BleServiceProvider != null)
         {
@@ -177,5 +163,12 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
             .AsTask(cancellationToken);
 
         return result.Error != BluetoothError.Success ? throw new InvalidOperationException($"Failed to create characteristic: {result.Error}") : result.Characteristic;
+    }
+    
+    protected static IBuffer CreateBuffer(byte[] data)
+    {
+        var writer = new DataWriter();
+        writer.WriteBytes(data);
+        return writer.DetachBuffer();
     }
 }

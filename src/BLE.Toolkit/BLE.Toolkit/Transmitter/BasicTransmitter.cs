@@ -11,15 +11,23 @@ namespace BLE.Toolkit.Transmitter;
 public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> settings) : ITransmitter
 {
     // Queue that stores outgoing payloads until the transmitter loop processes them.
-    private Queue<byte[]> TransmitQueue { get; init; } = new(100);
+    protected record TransmitElement(ulong? BluetoothAddress, byte[] Data);
+    private Queue<TransmitElement> TransmitQueue { get; } = new(100);
 
+    protected BLE.Toolkit.Cache.ExpiredList<ulong> BroadcastAddresses { get; } = new(TimeSpan.FromSeconds(30));
+    
     /// <summary>
     ///     Enqueues the provided data for later transmission.
     /// </summary>
     /// <param name="data">The frame to transmit.</param>
     public virtual void Transmit(byte[] data)
     {
-        ExecuteQueueFillStrategy(data);
+        ExecuteQueueFillStrategy(new TransmitElement(null, data));
+    }
+
+    public void Transmit(ulong bluetoothAddress, byte[] data)
+    {
+        ExecuteQueueFillStrategy(new TransmitElement(bluetoothAddress, data));
     }
 
     private TimeSpan GetPeriod()
@@ -33,8 +41,8 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 RatePeriod.Day => TimeSpan.FromDays(1),
                 _ => TimeSpan.FromSeconds(1)
             };
-        else
-            return TimeSpan.FromSeconds(1);
+        
+        return TimeSpan.FromSeconds(1);
     }
 
     /// <summary>
@@ -44,18 +52,32 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
     /// <returns>A completed task.</returns>
     public virtual Task StartAsync(CancellationToken cancellationToken)
     {
-        var delta = RateLimitingPause();
-
-        while (!cancellationToken.IsCancellationRequested)
+        return Task.Run(() =>
         {
-            DoRateLimiting(delta);
+            var delta = RateLimitingPause();
 
-            // If there is queued data, send it using the protocol-specific transport.
-            if (TransmitQueue.TryDequeue(out var data))
-                InnerTransmit(data);
-        }
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                DoRateLimiting(delta);
 
-        return Task.CompletedTask;
+                // If there is queued data, send it using the protocol-specific transport.
+                if (!TransmitQueue.TryDequeue(out var transmitElement)) 
+                    continue;
+                
+                if (transmitElement.BluetoothAddress != null)
+                    InnerTransmit(transmitElement);
+                else
+                {
+                    // broadcast
+                    foreach (var bluetoothAddress in BroadcastAddresses)
+                    {
+                        DoRateLimiting(delta);
+                        InnerTransmit(transmitElement with { BluetoothAddress = bluetoothAddress });
+                    }
+                }
+            }
+
+        }, cancellationToken);
     }
 
     private void DoRateLimiting(TimeSpan delta)
@@ -88,10 +110,10 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
     ///     Transmits a single queued frame to the underlying BLE transport.
     ///     Implementations provide the actual sending logic (e.g., writing to a characteristic).
     /// </summary>
-    /// <param name="data">The frame to send.</param>
-    protected abstract void InnerTransmit(byte[] data);
+    /// <param name="transmitElement"></param>
+    protected abstract void InnerTransmit(TransmitElement transmitElement);
     
-    protected virtual void ExecuteQueueFillStrategy(byte[] data)
+    protected virtual void ExecuteQueueFillStrategy(TransmitElement transmitElement)
     {
         switch (settings.CurrentValue.QueueFilledStrategy)
         {
@@ -107,6 +129,6 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 throw new ArgumentOutOfRangeException();
         }
         
-        TransmitQueue.Enqueue(data);
+        TransmitQueue.Enqueue(transmitElement);
     }
 }

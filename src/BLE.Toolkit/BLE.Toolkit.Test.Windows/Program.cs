@@ -69,9 +69,12 @@ if (role == "0")
             Limit = 1
         }
     }));
-    
-    transmitter.StartAsync(cts.Token).Wait();
+
+    var startTask = transmitter.StartAsync(cts.Token);
     transmitter.Transmit(bytes);
+
+    startTask.Wait(TimeSpan.FromSeconds(30), cts.Token);
+    
     transmitter.StopAsync(cts.Token).Wait();
 }
 else

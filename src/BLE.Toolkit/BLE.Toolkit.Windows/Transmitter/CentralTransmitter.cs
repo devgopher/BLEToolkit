@@ -1,8 +1,6 @@
-using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
-using Windows.Storage.Streams;
 using BLE.Toolkit.Settings;
 using Microsoft.Extensions.Options;
 
@@ -13,17 +11,17 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings) :
     private readonly Lock _connectionLock = new();
     private ulong? _targetBluetoothAddress;
 
-    public override async Task StartAsync(CancellationToken cancellationToken)
+    public override Task StartAsync(CancellationToken cancellationToken)
     {
         InitAdvertisementScanning();
-
+        
         if (AdvertisementWatcher != null)
             AdvertisementWatcher.Received += OnAdvertisementReceived;
-
-        StartAdvertisementScanning();
         
-        StartAdvertisementPublishing();
-        await base.StartAsync(cancellationToken);
+        StartAdvertisementScanning();
+
+        StartGattAdvertising();
+        return base.StartAsync(cancellationToken);
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)
@@ -37,23 +35,28 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings) :
         return base.StopAsync(cancellationToken);
     }
 
-    protected override void InnerTransmit(byte[] data)
+    protected override void InnerTransmit(TransmitElement transmitElement)
     {
-        var bluetoothAddress = GetTargetBluetoothAddress();
-        if (bluetoothAddress == null)
-            return;
-
-        ExecuteWithRetry(() => WriteToDevice(bluetoothAddress.Value, data));
+        ExecuteWithRetry(() =>
+        {
+            if (transmitElement?.BluetoothAddress == null)
+                return;
+            
+            WriteToDevice(transmitElement.BluetoothAddress.Value, transmitElement.Data);
+        });
     }
 
     private void OnAdvertisementReceived(
         BluetoothLEAdvertisementWatcher sender,
         BluetoothLEAdvertisementReceivedEventArgs args)
     {
+        if (!BroadcastAddresses.Contains(args.BluetoothAddress))
+            BroadcastAddresses.Add(args.BluetoothAddress);
+        
         var (serviceUuid, _) = GetPrimaryUuids();
         if (!args.Advertisement.ServiceUuids.Contains(serviceUuid))
             return;
-
+    
         lock (_connectionLock)
             _targetBluetoothAddress = args.BluetoothAddress;
     }
@@ -105,10 +108,4 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings) :
             return _targetBluetoothAddress;
     }
 
-    private static IBuffer CreateBuffer(byte[] data)
-    {
-        var writer = new DataWriter();
-        writer.WriteBytes(data);
-        return writer.DetachBuffer();
-    }
 }

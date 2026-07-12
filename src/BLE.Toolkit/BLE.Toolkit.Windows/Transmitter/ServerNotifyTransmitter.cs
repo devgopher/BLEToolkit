@@ -30,7 +30,7 @@ public class ServerNotifyTransmitter : BasicBleTransmitter
     {
         await InitializeGattServerAsync(cancellationToken);
         StartGattAdvertising();
-        StartAdvertisementPublishing();
+        // StartAdvertisementPublishing();
         await base.StartAsync(cancellationToken);
     }
 
@@ -38,8 +38,8 @@ public class ServerNotifyTransmitter : BasicBleTransmitter
     /// Transmits data by notifying subscribers on the local transmit characteristic.
     /// Retries the notify operation using <c>ExecuteWithRetry</c>.
     /// </summary>
-    /// <param name="data">The payload to transmit.</param>
-    protected override void InnerTransmit(byte[] data)
+    /// <param name="transmitElement"></param>
+    protected override void InnerTransmit(TransmitElement transmitElement)
     {
         // If the characteristic isn't available, nothing can be transmitted.
         if (LocalTransmitCharacteristic == null)
@@ -48,22 +48,10 @@ public class ServerNotifyTransmitter : BasicBleTransmitter
         ExecuteWithRetry(() =>
         {
             LocalTransmitCharacteristic
-                .NotifyValueAsync(CreateBuffer(data)) // Convert payload to a BLE/WinRT buffer.
+                .NotifyValueAsync(CreateBuffer(transmitElement.Data)) // Convert payload to a BLE/WinRT buffer.
                 .AsTask()
                 .GetAwaiter()
                 .GetResult();
         });
-    }
-
-    /// <summary>
-    /// Creates an <see cref="IBuffer"/> containing the provided byte array.
-    /// </summary>
-    /// <param name="data">The payload bytes to place into the buffer.</param>
-    /// <returns>An <see cref="IBuffer"/> with the serialized payload.</returns>
-    private static IBuffer CreateBuffer(byte[] data)
-    {
-        var writer = new DataWriter();
-        writer.WriteBytes(data);
-        return writer.DetachBuffer();
     }
 }

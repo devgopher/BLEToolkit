@@ -10,4 +10,8 @@
         <ProjectReference Include="..\BLE.Toolkit.Interfaces\BLE.Toolkit.Interfaces.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+    </ItemGroup>
+
 </Project>
