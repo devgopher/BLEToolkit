@@ -1,4 +1,5 @@
-﻿using BLE.Toolkit.Exceptions;
+﻿using BLE.Toolkit.Cache;
+using BLE.Toolkit.Exceptions;
 using BLE.Toolkit.Interfaces.Transmitter;
 using BLE.Toolkit.Settings;
 using Microsoft.Extensions.Options;
@@ -8,7 +9,7 @@ namespace BLE.Toolkit.Transmitter;
 /// <summary>
 ///     Base transmitter that queues outgoing frames and transmits them via <see cref="InnerTransmit" />.
 /// </summary>
-public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> settings) : ITransmitter
+public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : ITransmitter
 {
     // Queue that stores outgoing payloads until the transmitter loop processes them.
     protected record TransmitElement(ulong? BluetoothAddress, byte[] Data);

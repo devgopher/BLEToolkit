@@ -2,6 +2,7 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
+using BLE.Toolkit.Cache;
 using BLE.Toolkit.Settings;
 using BLE.Toolkit.Transmitter;
 using Microsoft.Extensions.Options;
@@ -10,7 +11,7 @@ using Polly.Retry;
 
 namespace BLE.Toolkit.Windows.Transmitter;
 
-public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> settings) : BasicTransmitter(settings)
+public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : BasicTransmitter(settings, deviceCache)
 {
     private IOptionsMonitor<TransmitterSettings> TransmitterSettingsMonitor { get; } = settings;
 

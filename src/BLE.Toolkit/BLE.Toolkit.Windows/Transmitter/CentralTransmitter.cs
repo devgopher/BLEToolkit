@@ -1,12 +1,13 @@
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
+using BLE.Toolkit.Cache;
 using BLE.Toolkit.Settings;
 using Microsoft.Extensions.Options;
 
 namespace BLE.Toolkit.Windows.Transmitter;
 
-public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings) : BasicBleTransmitter(settings)
+public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : BasicBleTransmitter(settings, deviceCache)
 {
     private readonly Lock _connectionLock = new();
     private ulong? _targetBluetoothAddress;

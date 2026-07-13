@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Storage.Streams;
+using BLE.Toolkit.Cache;
 using BLE.Toolkit.Settings;
 using Microsoft.Extensions.Options;
 
@@ -16,8 +17,8 @@ public class ServerNotifyTransmitter : BasicBleTransmitter
     /// Initializes a new instance of the <see cref="ServerNotifyTransmitter"/> class.
     /// </summary>
     /// <param name="settings">The transmitter settings monitored for changes.</param>
-    public ServerNotifyTransmitter(IOptionsMonitor<TransmitterSettings> settings)
-        : base(settings)
+    /// <param name="deviceCache"></param>
+    public ServerNotifyTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : base(settings, deviceCache)
     {
     }
 
