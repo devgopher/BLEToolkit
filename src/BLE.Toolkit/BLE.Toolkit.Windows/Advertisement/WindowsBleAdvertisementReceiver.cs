@@ -11,16 +11,16 @@ namespace BLE.Toolkit.Windows.Advertisement;
 /// <summary>
 /// BLE advertisement receiver for Windows
 /// </summary>
-/// <param name="transmitterSettingsMonitor"></param>
+/// <param name="advertisementSettingsMonitor"></param>
 /// <param name="deviceCache"></param>
 public class WindowsBleAdvertisementReceiver(
-    IOptionsMonitor<TransmitterSettings> transmitterSettingsMonitor,
+    IOptionsMonitor<AdvertisingSettings> advertisementSettingsMonitor,
     DeviceCache deviceCache)
     : BasicAdvertisementReceiver
 {
     private BluetoothLEAdvertisementWatcher? _advertisementWatcher;
 
-    private IOptionsMonitor<TransmitterSettings> TransmitterSettingsMonitor { get; } = transmitterSettingsMonitor;
+    private IOptionsMonitor<AdvertisingSettings> AdvertisementSettingsMonitor { get; } = advertisementSettingsMonitor;
 
     private static BluetoothLEScanningMode MapScanningMode(AdvertisingMode mode)
     {
@@ -75,7 +75,7 @@ public class WindowsBleAdvertisementReceiver(
     
     private void InitAdvertisementScanning()
     {
-        var advertising = TransmitterSettingsMonitor.CurrentValue.Advertising;
+        var advertising = AdvertisementSettingsMonitor.CurrentValue;
         if (!advertising.Enabled)
             return;
 

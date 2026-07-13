@@ -9,6 +9,6 @@ public class ReceiverSettings
     public int ReceiveQueueSize { get; init; } = 1024;
     public QueueFilledStrategy QueueFilledStrategy { get; init; }
     public required GattServiceSettings ServiceSettings { get; init; } = new();
-    
+    public required AdvertisingSettings Advertising { get; init; } = new();
     public required DeviceCacheSettings DeviceCache { get; init; }
 }
