@@ -26,15 +26,24 @@ public abstract class BasicReceiver(IOptionsMonitor<ReceiverSettings> settings) 
     }
 
     /// <summary>
-    /// Starts the receive loop and keeps filling the queue until cancellation is requested.
+    ///     Starts the receive loop on a background thread and keeps filling the queue until cancellation.
     /// </summary>
-    /// <param name="cancellationToken">Token used to stop the receive loop.</param>
-    /// <returns>A completed task.</returns>
     public virtual Task StartAsync(CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
-            // Fetch the next chunk and apply the configured queue fill strategy.
-            ExecuteQueueFillStrategy(GetDataChunk());
+        _ = Task.Run(() =>
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    ExecuteQueueFillStrategy(GetDataChunk());
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    break;
+                }
+            }
+        }, cancellationToken);
 
         return Task.CompletedTask;
     }

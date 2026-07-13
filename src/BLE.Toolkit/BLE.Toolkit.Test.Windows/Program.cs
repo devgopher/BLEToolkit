@@ -2,12 +2,14 @@
 
 using System.Text;
 using BLE.Toolkit;
+using BLE.Toolkit.Cache;
 using BLE.Toolkit.Settings;
 using BLE.Toolkit.Windows.Receiver;
 using BLE.Toolkit.Windows.Transmitter;
 
 var serviceGuid = "0497947e-a031-491b-b1a0-163d605003d5";
 var gattCharId = "16b7c725-ac93-4d29-b10e-039042971498";
+var deviceCache = new DeviceCache(TimeSpan.FromSeconds(30));
 
 Console.WriteLine("Choose your role: 0 - transmitter, 1 - receiver");
 
@@ -43,6 +45,7 @@ if (role == "0")
             RetryDelay = TimeSpan.FromSeconds(1)
         },
         QueueFilledStrategy = QueueFilledStrategy.DequeueLast,
+        DeviceCache = new DeviceCacheSettings { MaxCacheSize = 100 },
         Advertising = new AdvertisingSettings
         {
             Enabled = true,
@@ -68,7 +71,7 @@ if (role == "0")
             RatePeriod = RatePeriod.Second,
             Limit = 1
         }
-    }));
+    }), deviceCache);
 
     var startTask = transmitter.StartAsync(cts.Token);
     transmitter.Transmit(bytes);
@@ -81,11 +84,12 @@ else
 {
     Console.WriteLine("You are running on 1 - receiver");
 
-    var receiver = new Receiver(new OptionsMock<ReceiverSettings>(new ReceiverSettings
+    var receiver = new WindowsReceiver(new OptionsMock<ReceiverSettings>(new ReceiverSettings
     {
         ProtocolVersion = ProtocolVersion.BLE5,
         ReceiveQueueSize = 1,
         QueueFilledStrategy = QueueFilledStrategy.DequeueLast,
+        DeviceCache = new DeviceCacheSettings { MaxCacheSize = 100 },
         ServiceSettings = new GattServiceSettings
         {
             Services =

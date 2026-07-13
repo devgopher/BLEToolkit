@@ -1,5 +1,4 @@
 using Windows.Devices.Bluetooth;
-using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
 using BLE.Toolkit.Cache;
@@ -16,52 +15,8 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
 {
     private IOptionsMonitor<TransmitterSettings> TransmitterSettingsMonitor { get; } = settings;
 
-    protected BluetoothLEAdvertisementWatcher? AdvertisementWatcher { get; private set; }
     private GattServiceProvider? BleServiceProvider { get; set; }
     protected GattLocalCharacteristic? LocalTransmitCharacteristic { get; private set; }
-
-    private static BluetoothLEScanningMode MapScanningMode(AdvertisingMode mode)
-    {
-        return mode switch
-        {
-            AdvertisingMode.Passive => BluetoothLEScanningMode.Passive,
-            AdvertisingMode.Active or AdvertisingMode.Balanced => BluetoothLEScanningMode.Active,
-            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
-        };
-    }
-
-    protected void InitAdvertisementScanning()
-    {
-        var advertising = TransmitterSettingsMonitor.CurrentValue.Advertising;
-        if (!advertising.Enabled)
-            return;
-
-        AdvertisementWatcher = new BluetoothLEAdvertisementWatcher
-        {
-            ScanningMode = MapScanningMode(advertising.Mode)
-        };
-    }
-
-    protected void StartAdvertisementScanning()
-    {
-        AdvertisementWatcher?.Start();
-    }
-
-
-    protected void StartAdvertisementPublishing()
-    {
-        var advertising = TransmitterSettingsMonitor.CurrentValue.Advertising;
-        if (!advertising.Enabled)
-            return;
-
-        var gattAdvertising = new GattServiceProviderAdvertisingParameters
-        {
-            IsDiscoverable = true,
-            IsConnectable = true
-        };
-
-        BleServiceProvider?.StartAdvertising(gattAdvertising);
-    }
 
     protected async Task InitializeGattServerAsync(CancellationToken cancellationToken)
     {
@@ -126,17 +81,10 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
-        StopAdvertisementScanning();
         StopAdvertisementPublishing();
         StopGattServer();
 
         return base.StopAsync(cancellationToken);
-    }
-
-    private void StopAdvertisementScanning()
-    {
-        AdvertisementWatcher?.Stop();
-        AdvertisementWatcher = null;
     }
 
     private void StopAdvertisementPublishing()

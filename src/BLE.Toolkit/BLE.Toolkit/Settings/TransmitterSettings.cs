@@ -9,7 +9,9 @@ public class TransmitterSettings
     public int TransmitQueueSize { get; init; } = 1024;
     public RetryPolicySettings RetryPolicy { get; init; } = new();
     public QueueFilledStrategy QueueFilledStrategy { get; init; }
-    public AdvertisingSettings Advertising { get; init; } = new();
-    public GattServiceSettings ServiceSettings { get; init; } = new();
+    public required AdvertisingSettings Advertising { get; init; } = new();
+    public required GattServiceSettings ServiceSettings { get; init; } = new();
     public RateLimitingSettings? RateLimiting { get; init; }
+    
+    public required DeviceCacheSettings DeviceCache { get; init; }
 }

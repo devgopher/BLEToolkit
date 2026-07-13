@@ -11,29 +11,17 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
     : BasicBleTransmitter(settings, deviceCache)
 {
     private readonly Lock _connectionLock = new();
-    private ulong? _targetBluetoothAddress;
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
-        InitAdvertisementScanning();
-
-        if (AdvertisementWatcher != null)
-            AdvertisementWatcher.Received += OnAdvertisementReceived;
-
-        StartAdvertisementScanning();
-
         StartGattAdvertising();
         return base.StartAsync(cancellationToken);
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
-        if (AdvertisementWatcher != null)
-            AdvertisementWatcher.Received -= OnAdvertisementReceived;
-
         lock (_connectionLock)
         {
-            _targetBluetoothAddress = null;
         }
 
         return base.StopAsync(cancellationToken);
@@ -63,7 +51,6 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
 
         lock (_connectionLock)
         {
-            _targetBluetoothAddress = args.BluetoothAddress;
         }
     }
 
@@ -106,13 +93,5 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
 
         if (writeResult != GattCommunicationStatus.Success)
             throw new InvalidOperationException($"GATT write failed: {writeResult}");
-    }
-
-    private ulong? GetTargetBluetoothAddress()
-    {
-        lock (_connectionLock)
-        {
-            return _targetBluetoothAddress;
-        }
     }
 }
