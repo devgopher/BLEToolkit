@@ -7,7 +7,7 @@ public class GattServiceSetting
     /// UUID (as a string) of the GATT service.
     /// </summary>
     public required string ServiceUuid { get; init; }
-    
+
     /// <summary>
     /// Characteristics dictionary keyed by a logical name.
     /// Value is the characteristic UUID (as a string).

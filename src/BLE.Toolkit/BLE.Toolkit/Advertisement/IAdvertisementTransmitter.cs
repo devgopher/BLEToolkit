@@ -4,5 +4,4 @@ namespace BLE.Toolkit.Advertisement;
 
 public interface IAdvertisementTransmitter : IHostedService
 {
-    
 }

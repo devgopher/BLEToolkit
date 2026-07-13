@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BLE.Toolkit.Windows\BLE.Toolkit.Windows.csproj" />
+        <ProjectReference Include="..\BLE.Toolkit.Windows\BLE.Toolkit.Windows.csproj"/>
     </ItemGroup>
 
 </Project>

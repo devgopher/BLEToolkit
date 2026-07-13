@@ -9,6 +9,7 @@ public interface ITransmitter : IHostedService
     /// </summary>
     /// <param name="data"></param>
     public void Transmit(byte[] data);
+
     /// <summary>
     /// Transmit to a special device
     /// </summary>

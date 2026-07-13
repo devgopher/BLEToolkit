@@ -9,14 +9,16 @@ namespace BLE.Toolkit.Transmitter;
 /// <summary>
 ///     Base transmitter that queues outgoing frames and transmits them via <see cref="InnerTransmit" />.
 /// </summary>
-public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : ITransmitter
+public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache)
+    : ITransmitter
 {
     // Queue that stores outgoing payloads until the transmitter loop processes them.
     protected record TransmitElement(ulong? BluetoothAddress, byte[] Data);
+
     private Queue<TransmitElement> TransmitQueue { get; } = new(100);
 
-    protected BLE.Toolkit.Cache.ExpiredList<ulong> BroadcastAddresses { get; } = new(TimeSpan.FromSeconds(30));
-    
+    protected ExpiredList<ulong> BroadcastAddresses { get; } = new(TimeSpan.FromSeconds(30));
+
     /// <summary>
     ///     Enqueues the provided data for later transmission.
     /// </summary>
@@ -42,7 +44,7 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 RatePeriod.Day => TimeSpan.FromDays(1),
                 _ => TimeSpan.FromSeconds(1)
             };
-        
+
         return TimeSpan.FromSeconds(1);
     }
 
@@ -62,29 +64,26 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 DoRateLimiting(delta);
 
                 // If there is queued data, send it using the protocol-specific transport.
-                if (!TransmitQueue.TryDequeue(out var transmitElement)) 
+                if (!TransmitQueue.TryDequeue(out var transmitElement))
                     continue;
-                
+
                 if (transmitElement.BluetoothAddress != null)
                     InnerTransmit(transmitElement);
                 else
-                {
                     // broadcast
                     foreach (var bluetoothAddress in BroadcastAddresses)
                     {
                         DoRateLimiting(delta);
                         InnerTransmit(transmitElement with { BluetoothAddress = bluetoothAddress });
                     }
-                }
             }
-
         }, cancellationToken);
     }
 
     private void DoRateLimiting(TimeSpan delta)
     {
         // Rate limiting
-        if (settings.CurrentValue.RateLimiting is { Enabled: true }) 
+        if (settings.CurrentValue.RateLimiting is { Enabled: true })
             Thread.Sleep(delta.Add(TimeSpan.FromMilliseconds(1)));
     }
 
@@ -113,7 +112,7 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
     /// </summary>
     /// <param name="transmitElement"></param>
     protected abstract void InnerTransmit(TransmitElement transmitElement);
-    
+
     protected virtual void ExecuteQueueFillStrategy(TransmitElement transmitElement)
     {
         switch (settings.CurrentValue.QueueFilledStrategy)
@@ -129,7 +128,7 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        
+
         TransmitQueue.Enqueue(transmitElement);
     }
 }

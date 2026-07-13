@@ -6,8 +6,8 @@ using BLE.Toolkit.Settings;
 using BLE.Toolkit.Windows.Receiver;
 using BLE.Toolkit.Windows.Transmitter;
 
-string serviceGuid = "0497947e-a031-491b-b1a0-163d605003d5";
-string gattCharId = "16b7c725-ac93-4d29-b10e-039042971498";
+var serviceGuid = "0497947e-a031-491b-b1a0-163d605003d5";
+var gattCharId = "16b7c725-ac93-4d29-b10e-039042971498";
 
 Console.WriteLine("Choose your role: 0 - transmitter, 1 - receiver");
 
@@ -30,7 +30,7 @@ if (role == "0")
         Console.WriteLine("You are running on 0 - transmitter. Please, enter a short message:");
         message = Console.ReadLine();
     }
-    
+
     var bytes = Encoding.UTF8.GetBytes(message);
 
     var transmitter = new CentralTransmitter(new OptionsMock<TransmitterSettings>(new TransmitterSettings
@@ -55,9 +55,9 @@ if (role == "0")
                 new GattServiceSetting
                 {
                     ServiceUuid = serviceGuid,
-                    Characteristics = new ()
+                    Characteristics = new Dictionary<string, string>
                     {
-                        {"gattChar", gattCharId}
+                        { "gattChar", gattCharId }
                     }
                 }
             ]
@@ -74,7 +74,7 @@ if (role == "0")
     transmitter.Transmit(bytes);
 
     startTask.Wait(TimeSpan.FromSeconds(30), cts.Token);
-    
+
     transmitter.StopAsync(cts.Token).Wait();
 }
 else
@@ -93,19 +93,19 @@ else
                 new GattServiceSetting
                 {
                     ServiceUuid = serviceGuid,
-                    Characteristics = new()
+                    Characteristics = new Dictionary<string, string>
                     {
                         { "gattChar", gattCharId }
                     }
                 }
             ]
-        },
+        }
     }));
-    
+
     receiver.StartAsync(cts.Token).Wait();
     Console.WriteLine("Waiting for data from peer (60 seconds maximum)...");
     byte[]? data;
-    
+
     while (!receiver.TryGetLast(out data))
     {
         Console.Write(".");
@@ -113,13 +113,9 @@ else
     }
 
     if (data == null || data.Length == 0)
-    {
         Console.WriteLine("No data available.");
-    }
     else
-    {
         Console.WriteLine($"Data available: {Encoding.UTF8.GetString(data)}");
-    }
 }
-    
+
 cts.Cancel();

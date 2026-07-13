@@ -18,7 +18,8 @@ public class ServerNotifyTransmitter : BasicBleTransmitter
     /// </summary>
     /// <param name="settings">The transmitter settings monitored for changes.</param>
     /// <param name="deviceCache"></param>
-    public ServerNotifyTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : base(settings, deviceCache)
+    public ServerNotifyTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : base(
+        settings, deviceCache)
     {
     }
 

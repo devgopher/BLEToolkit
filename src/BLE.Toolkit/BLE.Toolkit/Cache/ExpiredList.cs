@@ -32,11 +32,14 @@ public class ExpiredList<T> : IList<T>
         PurgeExpired();
         // snapshot to avoid issues if caller enumerates while list changes
         var snapshot = new T[_items.Count];
-        for (int i = 0; i < _items.Count; i++) snapshot[i] = _items[i].Item;
+        for (var i = 0; i < _items.Count; i++) snapshot[i] = _items[i].Item;
         return ((IEnumerable<T>)snapshot).GetEnumerator();
     }
 
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 
     public void Add(T item)
     {
@@ -60,7 +63,7 @@ public class ExpiredList<T> : IList<T>
     {
         if (array is null) throw new ArgumentNullException(nameof(array));
         PurgeExpired();
-        for (int i = 0; i < _items.Count; i++)
+        for (var i = 0; i < _items.Count; i++)
             array[arrayIndex + i] = _items[i].Item;
     }
 
@@ -68,14 +71,13 @@ public class ExpiredList<T> : IList<T>
     {
         PurgeExpired();
         var comparer = EqualityComparer<T>.Default;
-        for (int i = 0; i < _items.Count; i++)
-        {
+        for (var i = 0; i < _items.Count; i++)
             if (comparer.Equals(_items[i].Item, item))
             {
                 _items.RemoveAt(i);
                 return true;
             }
-        }
+
         return false;
     }
 
@@ -94,11 +96,9 @@ public class ExpiredList<T> : IList<T>
     {
         PurgeExpired();
         var comparer = EqualityComparer<T>.Default;
-        for (int i = 0; i < _items.Count; i++)
-        {
+        for (var i = 0; i < _items.Count; i++)
             if (comparer.Equals(_items[i].Item, item))
                 return i;
-        }
         return -1;
     }
 

@@ -11,7 +11,7 @@ public class Receiver(IOptionsMonitor<ReceiverSettings> settings) : BasicReceive
     private BluetoothLEAdvertisementWatcher? _advertisementWatcher;
     private GattLocalCharacteristic[]? _bleCharacteristics;
     private GattServiceProvider? _bleServiceProvider;
-    
+
     public override Task StopAsync(CancellationToken cancellationToken)
     {
         throw new NotImplementedException();

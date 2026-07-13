@@ -33,10 +33,8 @@ public abstract class BasicReceiver(IOptionsMonitor<ReceiverSettings> settings) 
     public virtual Task StartAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested)
-        {
             // Fetch the next chunk and apply the configured queue fill strategy.
             ExecuteQueueFillStrategy(GetDataChunk());
-        }
 
         return Task.CompletedTask;
     }

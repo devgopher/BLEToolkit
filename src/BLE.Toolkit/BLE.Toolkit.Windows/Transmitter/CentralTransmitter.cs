@@ -7,7 +7,8 @@ using Microsoft.Extensions.Options;
 
 namespace BLE.Toolkit.Windows.Transmitter;
 
-public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : BasicBleTransmitter(settings, deviceCache)
+public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache)
+    : BasicBleTransmitter(settings, deviceCache)
 {
     private readonly Lock _connectionLock = new();
     private ulong? _targetBluetoothAddress;
@@ -15,10 +16,10 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
     public override Task StartAsync(CancellationToken cancellationToken)
     {
         InitAdvertisementScanning();
-        
+
         if (AdvertisementWatcher != null)
             AdvertisementWatcher.Received += OnAdvertisementReceived;
-        
+
         StartAdvertisementScanning();
 
         StartGattAdvertising();
@@ -31,7 +32,9 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
             AdvertisementWatcher.Received -= OnAdvertisementReceived;
 
         lock (_connectionLock)
+        {
             _targetBluetoothAddress = null;
+        }
 
         return base.StopAsync(cancellationToken);
     }
@@ -42,7 +45,7 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
         {
             if (transmitElement?.BluetoothAddress == null)
                 return;
-            
+
             WriteToDevice(transmitElement.BluetoothAddress.Value, transmitElement.Data);
         });
     }
@@ -53,13 +56,15 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
     {
         if (!BroadcastAddresses.Contains(args.BluetoothAddress))
             BroadcastAddresses.Add(args.BluetoothAddress);
-        
+
         var (serviceUuid, _) = GetPrimaryUuids();
         if (!args.Advertisement.ServiceUuids.Contains(serviceUuid))
             return;
-    
+
         lock (_connectionLock)
+        {
             _targetBluetoothAddress = args.BluetoothAddress;
+        }
     }
 
     private void WriteToDevice(ulong bluetoothAddress, byte[] data)
@@ -106,7 +111,8 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
     private ulong? GetTargetBluetoothAddress()
     {
         lock (_connectionLock)
+        {
             return _targetBluetoothAddress;
+        }
     }
-
 }

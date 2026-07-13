@@ -11,7 +11,8 @@ using Polly.Retry;
 
 namespace BLE.Toolkit.Windows.Transmitter;
 
-public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache) : BasicTransmitter(settings, deviceCache)
+public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache)
+    : BasicTransmitter(settings, deviceCache)
 {
     private IOptionsMonitor<TransmitterSettings> TransmitterSettingsMonitor { get; } = settings;
 
@@ -19,12 +20,15 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
     private GattServiceProvider? BleServiceProvider { get; set; }
     protected GattLocalCharacteristic? LocalTransmitCharacteristic { get; private set; }
 
-    private static BluetoothLEScanningMode MapScanningMode(AdvertisingMode mode) => mode switch
+    private static BluetoothLEScanningMode MapScanningMode(AdvertisingMode mode)
     {
-        AdvertisingMode.Passive => BluetoothLEScanningMode.Passive,
-        AdvertisingMode.Active or AdvertisingMode.Balanced => BluetoothLEScanningMode.Active,
-        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
-    };
+        return mode switch
+        {
+            AdvertisingMode.Passive => BluetoothLEScanningMode.Passive,
+            AdvertisingMode.Active or AdvertisingMode.Balanced => BluetoothLEScanningMode.Active,
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
+        };
+    }
 
     protected void InitAdvertisementScanning()
     {
@@ -58,7 +62,7 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
 
         BleServiceProvider?.StartAdvertising(gattAdvertising);
     }
-    
+
     protected async Task InitializeGattServerAsync(CancellationToken cancellationToken)
     {
         var serviceSetting = GetPrimaryServiceSetting()
@@ -90,8 +94,10 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         BleServiceProvider.StartAdvertising(parameters);
     }
 
-    private GattServiceSetting? GetPrimaryServiceSetting() =>
-        TransmitterSettingsMonitor.CurrentValue.ServiceSettings.Services.FirstOrDefault();
+    private GattServiceSetting? GetPrimaryServiceSetting()
+    {
+        return TransmitterSettingsMonitor.CurrentValue.ServiceSettings.Services.FirstOrDefault();
+    }
 
     protected (Guid ServiceUuid, Guid CharacteristicUuid) GetPrimaryUuids()
     {
@@ -123,7 +129,7 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         StopAdvertisementScanning();
         StopAdvertisementPublishing();
         StopGattServer();
-        
+
         return base.StopAsync(cancellationToken);
     }
 
@@ -133,7 +139,10 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         AdvertisementWatcher = null;
     }
 
-    private void StopAdvertisementPublishing() => BleServiceProvider?.StopAdvertising();
+    private void StopAdvertisementPublishing()
+    {
+        BleServiceProvider?.StopAdvertising();
+    }
 
     private void StopGattServer()
     {
@@ -163,9 +172,11 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
             .CreateCharacteristicAsync(Guid.Parse(characteristicUuid), parameters)
             .AsTask(cancellationToken);
 
-        return result.Error != BluetoothError.Success ? throw new InvalidOperationException($"Failed to create characteristic: {result.Error}") : result.Characteristic;
+        return result.Error != BluetoothError.Success
+            ? throw new InvalidOperationException($"Failed to create characteristic: {result.Error}")
+            : result.Characteristic;
     }
-    
+
     protected static IBuffer CreateBuffer(byte[] data)
     {
         var writer = new DataWriter();

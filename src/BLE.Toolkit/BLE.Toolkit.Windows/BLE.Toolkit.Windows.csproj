@@ -9,12 +9,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\BLE.Toolkit.Interfaces\BLE.Toolkit.Interfaces.csproj" />
-      <ProjectReference Include="..\BLE.Toolkit\BLE.Toolkit.csproj" />
+        <ProjectReference Include="..\BLE.Toolkit.Interfaces\BLE.Toolkit.Interfaces.csproj"/>
+        <ProjectReference Include="..\BLE.Toolkit\BLE.Toolkit.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Polly" Version="8.7.0" />
+        <PackageReference Include="Polly" Version="8.7.0"/>
     </ItemGroup>
 
 </Project>
