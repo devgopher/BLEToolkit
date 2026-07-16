@@ -14,4 +14,14 @@ public class AdvertisingSettings
     ///     Advertisement scanning mode.
     /// </summary>
     public AdvertisingMode Mode { get; init; } = AdvertisingMode.Balanced;
+
+    /// <summary>
+    ///     Local name included in published advertisements.
+    /// </summary>
+    public string? LocalName { get; init; }
+
+    /// <summary>
+    ///     Service UUIDs included in published advertisements.
+    /// </summary>
+    public Guid[] ServiceUuids { get; init; } = [];
 }

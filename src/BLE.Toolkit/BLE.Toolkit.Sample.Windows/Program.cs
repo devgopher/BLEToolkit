@@ -79,7 +79,9 @@ var receiverSettings = new OptionsMock<ReceiverSettings>(new ReceiverSettings
     }
 });
 
-var avdReceiverSettings = new OptionsMock<AdvertisingSettings>(receiverSettings.CurrentValue.Advertising);
+var advSettings = new OptionsMock<AdvertisingSettings>(receiverSettings.CurrentValue.Advertising);
+var advTransmitterSettings = new OptionsMock<AdvertisingSettings>(transmitterSettings.CurrentValue.Advertising);
+
 
 Console.WriteLine("Choose your role: 0 - transmitter, 1 - receiver");
 
@@ -105,7 +107,7 @@ if (role == "0")
 
     var bytes = Encoding.UTF8.GetBytes(message);
 
-    var advertisementReceiver = new WindowsBleAdvertisementReceiver(avdReceiverSettings, deviceCache);
+    var advertisementReceiver = new WindowsBleAdvertisementReceiver(advSettings, deviceCache);
     
     Console.WriteLine("Starting receiving advertisements...");
     advertisementReceiver.StartAsync(cts.Token).Wait();
@@ -139,6 +141,12 @@ else
     Console.WriteLine("Waiting for data from peer (60 seconds maximum)...");
     byte[]? data;
 
+   
+    Console.WriteLine("Starting publishing advertisements...");
+    var advertisementPublisher = new WindowsBleAdvertisementTransmitter(new OptionsMock<AdvertisingSettings>(advSettings.CurrentValue));
+    
+    advertisementPublisher.StartAsync(cts.Token).Wait();
+    
     Console.WriteLine("Trying to get messages...");
     while (!receiver.TryGetLast(out data))
     {
