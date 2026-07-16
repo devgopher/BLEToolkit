@@ -17,7 +17,6 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
 
     private Queue<TransmitElement> TransmitQueue { get; } = new(100);
 
-    protected ExpiredList<ulong> BroadcastAddresses { get; } = new(TimeSpan.FromSeconds(30));
 
     /// <summary>
     ///     Enqueues the provided data for later transmission.
@@ -70,12 +69,21 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 if (transmitElement.BluetoothAddress != null)
                     InnerTransmit(transmitElement);
                 else
+                {
+                    if (deviceCache.Count == 0)
+                    {
+                        TransmitQueue.Enqueue(transmitElement);
+                        
+                        continue;
+                    }
+
                     // broadcast
-                    foreach (var bluetoothAddress in BroadcastAddresses)
+                    foreach (var cached in deviceCache.ToArray())
                     {
                         DoRateLimiting(delta);
-                        InnerTransmit(transmitElement with { BluetoothAddress = bluetoothAddress });
+                        InnerTransmit(transmitElement with { BluetoothAddress = cached.BluetoothAddress });
                     }
+                }
             }
         }, cancellationToken);
     }

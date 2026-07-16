@@ -137,7 +137,7 @@ if (role == "0")
     var startTask = transmitter.StartAsync(cts.Token);
     transmitter.Transmit(bytes);
 
-    startTask.Wait(TimeSpan.FromSeconds(30), cts.Token);
+    startTask.Wait(TimeSpan.FromSeconds(300), cts.Token);
 
     Console.WriteLine("Stopping transmission and advertisement receiving...");
     advertisementReceiver.StopAsync(cts.Token).Wait();
@@ -158,17 +158,22 @@ else
     
     advertisementPublisher.StartAsync(cts.Token).Wait();
     
+    var waitTask = Task.Delay(TimeSpan.FromSeconds(60));
+    
     Console.WriteLine("Trying to get messages...");
-    while (!receiver.TryGetLast(out data))
+    while (!waitTask.IsCompleted)
     {
-        Console.Write(".");
-        Thread.Sleep(1000);
+        while (!receiver.TryGetLast(out data))
+        {
+            Console.Write(".");
+            Thread.Sleep(1000);
+        }
+        
+        if (data == null || data.Length == 0)
+            Console.WriteLine("No data available.");
+        else
+            Console.WriteLine($"Data available: {Encoding.UTF8.GetString(data)}");
     }
-
-    if (data == null || data.Length == 0)
-        Console.WriteLine("No data available.");
-    else
-        Console.WriteLine($"Data available: {Encoding.UTF8.GetString(data)}");
     
     Console.WriteLine("Stop trying...");
 }

@@ -1,5 +1,4 @@
 using Windows.Devices.Bluetooth;
-using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using BLE.Toolkit.Cache;
 using BLE.Toolkit.Settings;
@@ -38,22 +37,6 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
         });
     }
 
-    private void OnAdvertisementReceived(
-        BluetoothLEAdvertisementWatcher sender,
-        BluetoothLEAdvertisementReceivedEventArgs args)
-    {
-        if (!BroadcastAddresses.Contains(args.BluetoothAddress))
-            BroadcastAddresses.Add(args.BluetoothAddress);
-
-        var (serviceUuid, _) = GetPrimaryUuids();
-        if (!args.Advertisement.ServiceUuids.Contains(serviceUuid))
-            return;
-
-        lock (_connectionLock)
-        {
-        }
-    }
-
     private void WriteToDevice(ulong bluetoothAddress, byte[] data)
     {
         var (serviceUuid, characteristicUuid) = GetPrimaryUuids();
@@ -64,11 +47,17 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
             .GetAwaiter()
             .GetResult();
 
+        if (device == null)
+            return;
+        
         var servicesResult = device
             .GetGattServicesForUuidAsync(serviceUuid, BluetoothCacheMode.Uncached)
             .AsTask()
             .GetAwaiter()
             .GetResult();
+        
+        if (servicesResult == null)
+            return;
 
         if (servicesResult.Status != GattCommunicationStatus.Success || servicesResult.Services.Count == 0)
             throw new InvalidOperationException($"GATT service not found: {servicesResult.Status}");

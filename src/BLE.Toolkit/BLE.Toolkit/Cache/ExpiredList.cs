@@ -24,7 +24,7 @@ public class ExpiredList<T> : IList<T>
     private void PurgeExpired()
     {
         var now = _utcNow();
-        _items.RemoveAll(e => e.ExpireAtUtc <= now);
+        _items.RemoveAll(e => e?.ExpireAtUtc != null && e.ExpireAtUtc <= now);
     }
 
     public IEnumerator<T> GetEnumerator()
