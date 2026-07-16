@@ -74,14 +74,22 @@ var receiverSettings = new OptionsMock<ReceiverSettings>(new ReceiverSettings
     },
     Advertising = new AdvertisingSettings
     {
-        Enabled =  true,
-        Mode = AdvertisingMode.Passive
+        Enabled = true,
+        Mode = AdvertisingMode.Passive,
+        // LocalName / ServiceUuids are not supported by Windows BluetoothLEAdvertisementPublisher
+        // (system-reserved). Use ManufacturerData for beacon payload.
+        ManufacturerData =
+        [
+            new()
+            {
+                CompanyId = 0xFFFF,
+                Data = "234"u8.ToArray()
+            }
+        ]
     }
 });
 
 var advSettings = new OptionsMock<AdvertisingSettings>(receiverSettings.CurrentValue.Advertising);
-var advTransmitterSettings = new OptionsMock<AdvertisingSettings>(transmitterSettings.CurrentValue.Advertising);
-
 
 Console.WriteLine("Choose your role: 0 - transmitter, 1 - receiver");
 
@@ -140,8 +148,7 @@ else
     receiver.StartAsync(cts.Token).Wait();
     Console.WriteLine("Waiting for data from peer (60 seconds maximum)...");
     byte[]? data;
-
-   
+  
     Console.WriteLine("Starting publishing advertisements...");
     var advertisementPublisher = new WindowsBleAdvertisementTransmitter(new OptionsMock<AdvertisingSettings>(advSettings.CurrentValue));
     

@@ -24,4 +24,14 @@ public class AdvertisingSettings
     ///     Service UUIDs included in published advertisements.
     /// </summary>
     public Guid[] ServiceUuids { get; init; } = [];
+
+    /// <summary>
+    ///     Manufacturer data
+    /// </summary>
+    public ManufacturerData[]? ManufacturerData { get; init; }
+
+    /// <summary>
+    ///     Data sections
+    /// </summary>
+    public DataSection[]? DataSections { get; init; }
 }
