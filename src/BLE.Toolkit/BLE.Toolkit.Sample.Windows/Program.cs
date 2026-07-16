@@ -121,9 +121,13 @@ if (role == "0")
     advertisementReceiver.StartAsync(cts.Token).Wait();
 
 
-    advertisementReceiver.AdvertisementReceived += (adv) =>
+    advertisementReceiver.AdvertisementReceived += adv =>
     {
-        Console.WriteLine($"ADV: {adv.LocalName} {adv.BluetoothAddress}");
+        Console.WriteLine(
+            $"ADV: {adv.LocalName} {adv.BluetoothAddress}, " +
+            $"MFCT ID: {string.Join(',', adv.ManufacturerData.Select(md => $" {md.CompanyId} "))}" +
+            $"MFCT DATA LEN: {string.Join(',', adv.ManufacturerData.Select(md => $" {md.Data.Length} "))}"
+            );
     };
     
     var transmitter = new CentralTransmitter(transmitterSettings, deviceCache);

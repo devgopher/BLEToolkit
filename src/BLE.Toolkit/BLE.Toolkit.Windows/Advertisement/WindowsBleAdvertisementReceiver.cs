@@ -50,8 +50,8 @@ public class WindowsBleAdvertisementReceiver(
     {
         if (deviceCache.Any(d => d.BluetoothAddress.Equals(args.BluetoothAddress)))
             return;
-        
-        deviceCache.Add(new BleAdvertisement
+
+        var advertisement = new BleAdvertisement
         {
             BluetoothAddress = args.BluetoothAddress,
             // Rssi= args.Advertisement.ManufacturerData,
@@ -63,7 +63,11 @@ public class WindowsBleAdvertisementReceiver(
                 CompanyId = m.CompanyId,
                 Data = m.Data.ToArray()
             }).ToList()
-        });
+        };
+        
+        deviceCache.Add(advertisement);
+
+        base.OnAdvertisementReceived(advertisement);
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)
