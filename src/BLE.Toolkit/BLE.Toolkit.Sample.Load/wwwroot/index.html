@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLE Toolkit Load Test</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>BLE Toolkit Load Test</h1>
+      <p class="subtitle">Нагрузочный тест broadcast-передачи (как в Sample.Windows)</p>
+    </header>
+
+    <section class="card">
+      <h2>Роль узла</h2>
+      <div class="role-buttons">
+        <button id="btn-transmitter" class="role-btn">Передатчик</button>
+        <button id="btn-receiver" class="role-btn">Приёмник</button>
+      </div>
+      <div id="role-status" class="status-line">Роль: не выбрана</div>
+    </section>
+
+    <section id="transmitter-panel" class="card hidden">
+      <h2>Передатчик</h2>
+      <label>
+        Сообщение
+        <input id="tx-message" type="text" placeholder="Текст для broadcast" value="hello-ble">
+      </label>
+      <label>
+        Количество передач
+        <input id="tx-count" type="number" min="1" value="10">
+      </label>
+      <button id="btn-send" class="primary">Отправить broadcast</button>
+      <div id="tx-status" class="status-grid"></div>
+    </section>
+
+    <section id="receiver-panel" class="card hidden">
+      <h2>Приёмник</h2>
+      <div class="receiver-toolbar">
+        <div id="rx-count" class="count-badge">Принято: 0</div>
+        <button id="btn-clear" class="secondary">Очистить</button>
+      </div>
+      <div id="messages" class="messages"></div>
+    </section>
+
+    <section class="card">
+      <h2>Лог</h2>
+      <pre id="log" class="log"></pre>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

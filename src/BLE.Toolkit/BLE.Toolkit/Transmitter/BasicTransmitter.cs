@@ -1,5 +1,6 @@
 ﻿using BLE.Toolkit.Cache;
 using BLE.Toolkit.Exceptions;
+using BLE.Toolkit.Hosting;
 using BLE.Toolkit.Interfaces.Transmitter;
 using BLE.Toolkit.Settings;
 using Microsoft.Extensions.Options;
@@ -16,6 +17,7 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
     protected record TransmitElement(ulong? BluetoothAddress, byte[] Data);
 
     private Queue<TransmitElement> TransmitQueue { get; } = new(100);
+    private readonly BackgroundJob _transmitJob = new();
 
 
     /// <summary>
@@ -54,38 +56,40 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
     /// <returns>A completed task.</returns>
     public virtual Task StartAsync(CancellationToken cancellationToken)
     {
-        return Task.Run(() =>
+        _transmitJob.Start(TransmitLoop, cancellationToken);
+        return Task.CompletedTask;
+    }
+
+    private void TransmitLoop(CancellationToken cancellationToken)
+    {
+        var delta = RateLimitingPause();
+
+        while (!cancellationToken.IsCancellationRequested)
         {
-            var delta = RateLimitingPause();
+            DoRateLimiting(delta);
 
-            while (!cancellationToken.IsCancellationRequested)
+            // If there is queued data, send it using the protocol-specific transport.
+            if (!TransmitQueue.TryDequeue(out var transmitElement))
+                continue;
+
+            if (transmitElement.BluetoothAddress != null)
+                InnerTransmit(transmitElement);
+            else
             {
-                DoRateLimiting(delta);
-
-                // If there is queued data, send it using the protocol-specific transport.
-                if (!TransmitQueue.TryDequeue(out var transmitElement))
-                    continue;
-
-                if (transmitElement.BluetoothAddress != null)
-                    InnerTransmit(transmitElement);
-                else
+                if (deviceCache.Count == 0)
                 {
-                    if (deviceCache.Count == 0)
-                    {
-                        TransmitQueue.Enqueue(transmitElement);
-                        
-                        continue;
-                    }
+                    TransmitQueue.Enqueue(transmitElement);
+                    continue;
+                }
 
-                    // broadcast
-                    foreach (var cached in deviceCache.ToArray())
-                    {
-                        DoRateLimiting(delta);
-                        InnerTransmit(transmitElement with { BluetoothAddress = cached.BluetoothAddress });
-                    }
+                // broadcast
+                foreach (var cached in deviceCache.ToArray())
+                {
+                    DoRateLimiting(delta);
+                    InnerTransmit(transmitElement with { BluetoothAddress = cached.BluetoothAddress });
                 }
             }
-        }, cancellationToken);
+        }
     }
 
     private void DoRateLimiting(TimeSpan delta)
@@ -109,10 +113,8 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
     /// </summary>
     /// <param name="cancellationToken">Token used for stop coordination.</param>
     /// <returns>A completed task.</returns>
-    public virtual Task StopAsync(CancellationToken cancellationToken)
-    {
-        return Task.CompletedTask;
-    }
+    public virtual Task StopAsync(CancellationToken cancellationToken) =>
+        _transmitJob.StopAsync(cancellationToken);
 
     /// <summary>
     ///     Transmits a single queued frame to the underlying BLE transport.
