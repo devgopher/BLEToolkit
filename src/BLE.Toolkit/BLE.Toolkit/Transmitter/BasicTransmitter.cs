@@ -62,11 +62,9 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
 
     private void TransmitLoop(CancellationToken cancellationToken)
     {
-        var delta = RateLimitingPause();
-
         while (!cancellationToken.IsCancellationRequested)
         {
-            DoRateLimiting(delta);
+            DoRateLimiting();
 
             // If there is queued data, send it using the protocol-specific transport.
             if (!TransmitQueue.TryDequeue(out var transmitElement))
@@ -85,18 +83,20 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 // broadcast
                 foreach (var cached in deviceCache.ToArray())
                 {
-                    DoRateLimiting(delta);
+                    DoRateLimiting();
                     InnerTransmit(transmitElement with { BluetoothAddress = cached.BluetoothAddress });
                 }
             }
         }
     }
 
-    private void DoRateLimiting(TimeSpan delta)
+    private void DoRateLimiting()
     {
-        // Rate limiting
-        if (settings.CurrentValue.RateLimiting is { Enabled: true })
-            Thread.Sleep(delta.Add(TimeSpan.FromMilliseconds(1)));
+        if (settings.CurrentValue.RateLimiting is not { Enabled: true })
+            return;
+
+        var delta = RateLimitingPause();
+        Thread.Sleep(delta.Add(TimeSpan.FromMilliseconds(1)));
     }
 
     private TimeSpan RateLimitingPause()

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,43 +10,71 @@
   <main class="container">
     <header>
       <h1>BLE Toolkit Load Test</h1>
-      <p class="subtitle">Нагрузочный тест broadcast-передачи (как в Sample.Windows)</p>
+      <p class="subtitle">Broadcast load test (same flow as Sample.Windows)</p>
     </header>
 
     <section class="card">
-      <h2>Роль узла</h2>
+      <h2>Node Role</h2>
       <div class="role-buttons">
-        <button id="btn-transmitter" class="role-btn">Передатчик</button>
-        <button id="btn-receiver" class="role-btn">Приёмник</button>
+        <button id="btn-transmitter" class="role-btn">Transmitter</button>
+        <button id="btn-receiver" class="role-btn">Receiver</button>
       </div>
-      <div id="role-status" class="status-line">Роль: не выбрана</div>
+      <div id="role-status" class="status-line">Role: not selected</div>
     </section>
 
     <section id="transmitter-panel" class="card hidden">
-      <h2>Передатчик</h2>
+      <h2>Transmitter</h2>
       <label>
-        Сообщение
-        <input id="tx-message" type="text" placeholder="Текст для broadcast" value="hello-ble">
+        Message
+        <input id="tx-message" type="text" placeholder="Broadcast text" value="hello-ble">
       </label>
       <label>
-        Количество передач
+        Transmission count
         <input id="tx-count" type="number" min="1" value="10">
       </label>
-      <button id="btn-send" class="primary">Отправить broadcast</button>
+
+      <div class="throttling">
+        <h3>Throttling</h3>
+        <label class="checkbox-row">
+          <input id="throttle-enabled" type="checkbox">
+          Enable rate limiting
+        </label>
+        <label>
+          Rate period
+          <select id="throttle-period">
+            <option value="second">Per second</option>
+            <option value="minute">Per minute</option>
+            <option value="hour">Per hour</option>
+            <option value="day">Per day</option>
+          </select>
+        </label>
+        <label>
+          Limit
+          <input id="throttle-limit" type="number" min="1" value="1">
+        </label>
+        <button id="btn-throttle-apply" class="secondary">Apply throttling</button>
+        <div id="throttle-status" class="status-line"></div>
+      </div>
+
+      <button id="btn-send" class="primary">Send broadcast</button>
       <div id="tx-status" class="status-grid"></div>
+      <div class="device-cache">
+        <h3>Device cache</h3>
+        <div id="tx-devices" class="device-list"></div>
+      </div>
     </section>
 
     <section id="receiver-panel" class="card hidden">
-      <h2>Приёмник</h2>
+      <h2>Receiver</h2>
       <div class="receiver-toolbar">
-        <div id="rx-count" class="count-badge">Принято: 0</div>
-        <button id="btn-clear" class="secondary">Очистить</button>
+        <div id="rx-count" class="count-badge">Received: 0</div>
+        <button id="btn-clear" class="secondary">Clear</button>
       </div>
       <div id="messages" class="messages"></div>
     </section>
 
     <section class="card">
-      <h2>Лог</h2>
+      <h2>Log</h2>
       <pre id="log" class="log"></pre>
     </section>
   </main>

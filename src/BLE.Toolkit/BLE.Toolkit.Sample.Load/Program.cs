@@ -1,5 +1,6 @@
 using BLE.Toolkit.Sample.Load.Models;
 using BLE.Toolkit.Sample.Load.Services;
+using BLE.Toolkit.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,28 @@ var app = builder.Build();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+app.MapGet("/api/transmitter/throttling", (BleLoadNodeService node) =>
+  Results.Ok(node.GetThrottling()));
+
+app.MapPut("/api/transmitter/throttling", (SetThrottlingRequest request, BleLoadNodeService node) =>
+{
+  if (!TryParseRatePeriod(request.RatePeriod, out var ratePeriod))
+    return Results.BadRequest(new { error = "RatePeriod must be 'second', 'minute', 'hour', or 'day'." });
+
+  try
+  {
+    node.SetThrottling(request.Enabled, ratePeriod, request.Limit);
+    return Results.Ok(node.GetThrottling());
+  }
+  catch (ArgumentOutOfRangeException ex)
+  {
+    return Results.BadRequest(new { error = ex.Message });
+  }
+});
+
+app.MapGet("/api/transmitter/devices", (BleLoadNodeService node) =>
+  Results.Ok(node.GetCachedDevices()));
 
 app.MapGet("/api/node/status", (BleLoadNodeService node) => node.GetStatus());
 
@@ -74,4 +97,29 @@ static bool Assign(NodeRole role, out NodeRole parsed)
 {
   parsed = role;
   return true;
+}
+
+static bool TryParseRatePeriod(string? ratePeriod, out RatePeriod parsed)
+{
+  parsed = RatePeriod.Second;
+  if (string.IsNullOrWhiteSpace(ratePeriod))
+    return false;
+
+  switch (ratePeriod.Trim().ToLowerInvariant())
+  {
+    case "second":
+      parsed = RatePeriod.Second;
+      return true;
+    case "minute":
+      parsed = RatePeriod.Minute;
+      return true;
+    case "hour":
+      parsed = RatePeriod.Hour;
+      return true;
+    case "day":
+      parsed = RatePeriod.Day;
+      return true;
+    default:
+      return false;
+  }
 }

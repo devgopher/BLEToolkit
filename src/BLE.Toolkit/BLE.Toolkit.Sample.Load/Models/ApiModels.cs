@@ -17,7 +17,19 @@ public sealed record ReceiverMessagesResponse(int TotalCount, IReadOnlyList<Rece
 
 public sealed record ReceiverCountResponse(int Count);
 
-public sealed record TransmitterStatusDto(int TargetCount, int EnqueuedCount, int DiscoveredDevices, string? LastMessage);
+public sealed record SetThrottlingRequest(bool Enabled, string RatePeriod, ushort Limit);
+
+public sealed record ThrottlingSettingsDto(bool Enabled, string RatePeriod, ushort Limit);
+
+public sealed record CachedDeviceDto(string BluetoothAddress, string? LocalName);
+
+public sealed record TransmitterStatusDto(
+    int TargetCount,
+    int EnqueuedCount,
+    int DiscoveredDevices,
+    string? LastMessage,
+    ThrottlingSettingsDto Throttling,
+    IReadOnlyList<CachedDeviceDto> Devices);
 
 public sealed record ReceiverStatusDto(int ReceivedCount);
 

@@ -14,8 +14,8 @@ public sealed class BleLoadNodeService(
     ILogger<BleLoadNodeService> logger) : IAsyncDisposable
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private readonly DeviceCache _deviceCache = BleToolkitDefaults.CreateDeviceCache();
-    private readonly OptionsMock<TransmitterSettings> _transmitterSettings =
+    private readonly DeviceCache _deviceCache = BleToolkitDefaults.CreateDeviceCache(TimeSpan.FromSeconds(5));
+    private readonly MutableOptionsMonitor<TransmitterSettings> _transmitterSettings =
         new(BleToolkitDefaults.CreateTransmitterSettings());
     private readonly OptionsMock<ReceiverSettings> _receiverSettings =
         new(BleToolkitDefaults.CreateReceiverSettings());
@@ -45,7 +45,9 @@ public sealed class BleLoadNodeService(
                     _transmitTargetCount,
                     _transmitEnqueuedCount,
                     _deviceCache.Count,
-                    _lastTransmitMessage)
+                    _lastTransmitMessage,
+                    GetThrottling(),
+                    GetCachedDevices())
                 : null,
             _role == NodeRole.Receiver
                 ? new ReceiverStatusDto(messageStore.TotalCount)
@@ -130,6 +132,74 @@ public sealed class BleLoadNodeService(
     public int GetReceivedCount() => messageStore.TotalCount;
 
     public void ClearReceivedMessages() => messageStore.Clear();
+
+    public ThrottlingSettingsDto GetThrottling()
+    {
+        var rateLimiting = _transmitterSettings.CurrentValue.RateLimiting
+                           ?? new RateLimitingSettings
+                           {
+                               Enabled = false,
+                               RatePeriod = RatePeriod.Second,
+                               Limit = 1
+                           };
+
+        return new ThrottlingSettingsDto(
+            rateLimiting.Enabled,
+            rateLimiting.RatePeriod.ToString().ToLowerInvariant(),
+            rateLimiting.Limit);
+    }
+
+    public void SetThrottling(bool enabled, RatePeriod ratePeriod, ushort limit)
+    {
+        if (enabled && limit == 0)
+            throw new ArgumentOutOfRangeException(nameof(limit), "Limit must be greater than zero when throttling is enabled.");
+
+        var current = _transmitterSettings.CurrentValue;
+        UpdateTransmitterSettings(new TransmitterSettings
+        {
+            ProtocolVersion = current.ProtocolVersion,
+            TransmitQueueSize = current.TransmitQueueSize,
+            RetryPolicy = current.RetryPolicy,
+            QueueFilledStrategy = current.QueueFilledStrategy,
+            DeviceCache = current.DeviceCache,
+            Advertising = current.Advertising,
+            ServiceSettings = current.ServiceSettings,
+            RateLimiting = new RateLimitingSettings
+            {
+                Enabled = enabled,
+                RatePeriod = ratePeriod,
+                Limit = limit
+            }
+        });
+
+        logger.LogInformation(
+            "Throttling updated: enabled={Enabled}, period={RatePeriod}, limit={Limit}",
+            enabled,
+            ratePeriod,
+            limit);
+    }
+
+    public IReadOnlyList<CachedDeviceDto> GetCachedDevices() =>
+        _deviceCache
+            .Select(device => new CachedDeviceDto(
+                FormatBluetoothAddress(device.BluetoothAddress),
+                string.IsNullOrWhiteSpace(device.LocalName) ? null : device.LocalName))
+            .ToArray();
+
+    private static string FormatBluetoothAddress(ulong address)
+    {
+        Span<byte> bytes = stackalloc byte[8];
+        BitConverter.TryWriteBytes(bytes, address);
+
+        var parts = new string[6];
+        for (var i = 0; i < 6; i++)
+            parts[i] = bytes[5 - i].ToString("X2");
+
+        return string.Join(':', parts);
+    }
+
+    private void UpdateTransmitterSettings(TransmitterSettings settings) =>
+        _transmitterSettings.Set(settings);
 
     public async ValueTask DisposeAsync()
     {

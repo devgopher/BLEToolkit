@@ -81,5 +81,5 @@ internal static class BleToolkitDefaults
         }
     };
 
-    public static DeviceCache CreateDeviceCache() => new(TimeSpan.FromSeconds(30));
+    public static DeviceCache CreateDeviceCache(TimeSpan? expired = null) => new(expired ?? TimeSpan.FromSeconds(30));
 }

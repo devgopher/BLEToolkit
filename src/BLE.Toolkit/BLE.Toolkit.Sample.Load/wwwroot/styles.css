@@ -104,7 +104,8 @@ label {
 }
 
 input[type="text"],
-input[type="number"] {
+input[type="number"],
+select {
   display: block;
   width: 100%;
   margin-top: 6px;
@@ -116,6 +117,28 @@ input[type="number"] {
   font-size: 1rem;
 }
 
+.throttling {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.throttling h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-row input {
+  width: auto;
+  margin: 0;
+}
+
 .status-line {
   margin-top: 12px;
   color: var(--muted);
@@ -125,6 +148,53 @@ input[type="number"] {
   margin-top: 16px;
   display: grid;
   gap: 8px;
+  color: var(--muted);
+}
+
+.device-cache {
+  margin-top: 20px;
+}
+
+.device-cache h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.device-list {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #111827;
+  overflow: auto;
+  max-height: 240px;
+}
+
+.device-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.device-row:last-child {
+  border-bottom: none;
+}
+
+.device-header {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.device-address {
+  font-family: Consolas, monospace;
+}
+
+.device-item.muted {
+  padding: 10px 12px;
   color: var(--muted);
 }
 
