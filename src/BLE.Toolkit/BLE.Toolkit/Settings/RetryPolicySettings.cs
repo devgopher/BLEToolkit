@@ -6,5 +6,5 @@
 public class RetryPolicySettings
 {
     public int RetryCount { get; init; } = 3;
-    public TimeSpan RetryDelay { get; init; } = TimeSpan.FromMilliseconds(50);
+    public TimeSpan RetryDelay { get; init; } = TimeSpan.FromMilliseconds(3000);
 }

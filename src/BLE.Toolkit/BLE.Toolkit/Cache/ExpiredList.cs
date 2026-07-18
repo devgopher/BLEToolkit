@@ -14,6 +14,9 @@ public class ExpiredList<T> : IList<T>
     private readonly TimeSpan _timeout;
     private readonly Func<DateTime> _utcNow;
 
+    public ExpiredList(int timeout, Func<DateTime>? utcNow = null) : this(TimeSpan.FromSeconds(timeout), utcNow) 
+    {}
+    
     public ExpiredList(TimeSpan timeout, Func<DateTime>? utcNow = null)
     {
         if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));

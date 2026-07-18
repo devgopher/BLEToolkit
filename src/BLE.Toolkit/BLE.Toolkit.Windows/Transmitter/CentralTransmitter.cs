@@ -9,7 +9,9 @@ namespace BLE.Toolkit.Windows.Transmitter;
 public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache)
     : BasicBleTransmitter(settings, deviceCache)
 {
-    private readonly Lock _connectionLock = new();
+    private ExpiredList<KeyValuePair<ulong, GattCharacteristicsResult>>? _characteristicsResults = new(settings.CurrentValue.DeviceCache.Timeout,
+        () => DateTime.UtcNow);
+    
 
     public override Task StartAsync(CancellationToken cancellationToken)
     {
@@ -19,10 +21,6 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
 
     public override Task StopAsync(CancellationToken cancellationToken)
     {
-        lock (_connectionLock)
-        {
-        }
-
         return base.StopAsync(cancellationToken);
     }
 
@@ -32,55 +30,83 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
         {
             if (transmitElement.BluetoothAddress == null)
                 return;
-
             WriteToDevice(transmitElement.BluetoothAddress.Value, transmitElement.Data);
         });
     }
 
     private void WriteToDevice(ulong bluetoothAddress, byte[] data)
     {
+        var characteristicsResult = GetCharacteristics(bluetoothAddress);
+
+        var buffer = CreateBuffer(data);
+        var writeResult = characteristicsResult.Characteristics[0]
+            .WriteValueAsync(buffer, GattWriteOption.WriteWithoutResponse)
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+
+        if (writeResult != GattCommunicationStatus.Success)
+        {
+            _characteristicsResults = null;
+            throw new InvalidOperationException($"GATT write failed: {writeResult}");
+        }
+    }
+
+    private GattCharacteristicsResult GetCharacteristics(ulong bluetoothAddress)
+    {
+        var cached = _characteristicsResults.FirstOrDefault(cr => cr.Key == bluetoothAddress);
+        if (cached.Value != null)
+            return cached.Value;
+            
         var (serviceUuid, characteristicUuid) = GetPrimaryUuids();
 
-        using var device = BluetoothLEDevice
+        var device = BluetoothLEDevice
             .FromBluetoothAddressAsync(bluetoothAddress)
             .AsTask()
             .GetAwaiter()
             .GetResult();
 
         if (device == null)
-            return;
-        
+        {
+            _characteristicsResults = null;
+            throw new InvalidOperationException("BLE devices not found");
+        }
+
         var servicesResult = device
-            .GetGattServicesForUuidAsync(serviceUuid, BluetoothCacheMode.Uncached)
+            .GetGattServicesForUuidAsync(serviceUuid, BluetoothCacheMode.Cached)
             .AsTask()
             .GetAwaiter()
             .GetResult();
         
         if (servicesResult == null)
-            return;
+        {
+            _characteristicsResults = null;
+            throw new InvalidOperationException("GATT services not found");
+        }
 
         if (servicesResult.Status != GattCommunicationStatus.Success || servicesResult.Services.Count == 0)
-            return; //throw new InvalidOperationException($"GATT service not found: {servicesResult.Status}");
+        {
+            _characteristicsResults = null;
+            throw new InvalidOperationException($"GATT service not found: {servicesResult.Status}");
+        }
 
         var service = servicesResult.Services[0];
         var characteristicsResult = service
-            .GetCharacteristicsForUuidAsync(characteristicUuid, BluetoothCacheMode.Uncached)
+            .GetCharacteristicsForUuidAsync(characteristicUuid, BluetoothCacheMode.Cached)
             .AsTask()
             .GetAwaiter()
             .GetResult();
 
         if (characteristicsResult.Status != GattCommunicationStatus.Success
             || characteristicsResult.Characteristics.Count == 0)
-            return; //throw new InvalidOperationException($"GATT characteristic not found: {characteristicsResult.Status}");
+        {
+            Console.WriteLine("NF: " + Enum.GetName(characteristicsResult.Status));
+            _characteristicsResults = null;
+            throw new InvalidOperationException($"GATT characteristic not found: {characteristicsResult.Status}");
+        }
 
-        var buffer = CreateBuffer(data);
-        var writeResult = characteristicsResult.Characteristics[0]
-            .WriteValueAsync(buffer, GattWriteOption.WriteWithResponse)
-            .AsTask()
-            .GetAwaiter()
-            .GetResult();
-
-        if (writeResult != GattCommunicationStatus.Success)
-            return; //throw new InvalidOperationException($"GATT write failed: {writeResult}");
+        _characteristicsResults.Add(new KeyValuePair<ulong, GattCharacteristicsResult>(bluetoothAddress, characteristicsResult));
+        
+        return characteristicsResult;
     }
 }

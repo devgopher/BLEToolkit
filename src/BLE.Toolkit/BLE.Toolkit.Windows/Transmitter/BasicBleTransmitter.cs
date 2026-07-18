@@ -65,18 +65,26 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
 
     protected void ExecuteWithRetry(Action action)
     {
-        var retry = TransmitterSettingsMonitor.CurrentValue.RetryPolicy;
+        try
+        {
+            var retry = TransmitterSettingsMonitor.CurrentValue.RetryPolicy;
 
-        var pipeline = new ResiliencePipelineBuilder()
-            .AddRetry(new RetryStrategyOptions
-            {
-                MaxRetryAttempts = retry.RetryCount,
-                Delay = retry.RetryDelay,
-                BackoffType = DelayBackoffType.Constant
-            })
-            .Build();
+            var pipeline = new ResiliencePipelineBuilder()
+                .AddRetry(new RetryStrategyOptions
+                {
+                    MaxRetryAttempts = retry.RetryCount,
+                    Delay = retry.RetryDelay,
+                    BackoffType = DelayBackoffType.Exponential,
+                    OnRetry = args => default
+                })
+                .Build();
 
-        pipeline.Execute(action);
+            pipeline.Execute(action);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("FF: " + ex.Message);
+        }
     }
 
     public override Task StopAsync(CancellationToken cancellationToken)
