@@ -30,7 +30,7 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
     {
         ExecuteWithRetry(() =>
         {
-            if (transmitElement?.BluetoothAddress == null)
+            if (transmitElement.BluetoothAddress == null)
                 return;
 
             WriteToDevice(transmitElement.BluetoothAddress.Value, transmitElement.Data);
@@ -60,7 +60,7 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
             return;
 
         if (servicesResult.Status != GattCommunicationStatus.Success || servicesResult.Services.Count == 0)
-            throw new InvalidOperationException($"GATT service not found: {servicesResult.Status}");
+            return; //throw new InvalidOperationException($"GATT service not found: {servicesResult.Status}");
 
         var service = servicesResult.Services[0];
         var characteristicsResult = service
@@ -71,7 +71,7 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
 
         if (characteristicsResult.Status != GattCommunicationStatus.Success
             || characteristicsResult.Characteristics.Count == 0)
-            throw new InvalidOperationException($"GATT characteristic not found: {characteristicsResult.Status}");
+            return; //throw new InvalidOperationException($"GATT characteristic not found: {characteristicsResult.Status}");
 
         var buffer = CreateBuffer(data);
         var writeResult = characteristicsResult.Characteristics[0]
@@ -81,6 +81,6 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
             .GetResult();
 
         if (writeResult != GattCommunicationStatus.Success)
-            throw new InvalidOperationException($"GATT write failed: {writeResult}");
+            return; //throw new InvalidOperationException($"GATT write failed: {writeResult}");
     }
 }

@@ -84,7 +84,8 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 foreach (var cached in deviceCache.ToArray())
                 {
                     DoRateLimiting();
-                    InnerTransmit(transmitElement with { BluetoothAddress = cached.BluetoothAddress });
+                    if (cached != null!)
+                        InnerTransmit(transmitElement with { BluetoothAddress = cached.BluetoothAddress });
                 }
             }
         }

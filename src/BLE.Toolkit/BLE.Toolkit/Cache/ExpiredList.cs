@@ -24,7 +24,7 @@ public class ExpiredList<T> : IList<T>
     private void PurgeExpired()
     {
         var now = _utcNow();
-        _items.RemoveAll(e => e?.ExpireAtUtc != null && e.ExpireAtUtc <= now);
+        _items.RemoveAll(e => e.ExpireAtUtc != default && e.ExpireAtUtc <= now);
     }
 
     public IEnumerator<T> GetEnumerator()
@@ -44,6 +44,9 @@ public class ExpiredList<T> : IList<T>
     public void Add(T item)
     {
         PurgeExpired();
+        if (item == null)
+            return;
+        
         _items.Add(new Entry(item, _utcNow().Add(_timeout)));
     }
 
