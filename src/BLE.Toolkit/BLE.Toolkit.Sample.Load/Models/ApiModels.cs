@@ -3,7 +3,8 @@ namespace BLE.Toolkit.Sample.Load.Models;
 public enum NodeRole
 {
     None,
-    Transmitter,
+    CentralTransmitter,
+    ServerNotifyTransmitter,
     Receiver
 }
 
@@ -24,6 +25,7 @@ public sealed record ThrottlingSettingsDto(bool Enabled, string RatePeriod, usho
 public sealed record CachedDeviceDto(string BluetoothAddress, string? LocalName);
 
 public sealed record TransmitterStatusDto(
+    string Mode,
     int TargetCount,
     int EnqueuedCount,
     int DiscoveredDevices,

@@ -39,7 +39,10 @@ app.MapGet("/api/node/status", (BleLoadNodeService node) => node.GetStatus());
 app.MapPost("/api/node/role", async (SetRoleRequest request, BleLoadNodeService node, CancellationToken ct) =>
 {
   if (!TryParseRole(request.Role, out var role))
-    return Results.BadRequest(new { error = "Role must be 'transmitter' or 'receiver'." });
+    return Results.BadRequest(new
+    {
+      error = "Role must be 'central', 'servernotify', or 'receiver'."
+    });
 
   await node.SetRoleAsync(role, ct);
   return Results.Ok(node.GetStatus());
@@ -87,8 +90,11 @@ static bool TryParseRole(string? role, out NodeRole parsed)
 
   return role.Trim().ToLowerInvariant() switch
   {
-    "transmitter" or "0" => Assign(NodeRole.Transmitter, out parsed),
-    "receiver" or "1" => Assign(NodeRole.Receiver, out parsed),
+    "central" or "centraltransmitter" or "transmitter" or "0" =>
+      Assign(NodeRole.CentralTransmitter, out parsed),
+    "servernotify" or "servernotifytransmitter" or "1" =>
+      Assign(NodeRole.ServerNotifyTransmitter, out parsed),
+    "receiver" or "2" => Assign(NodeRole.Receiver, out parsed),
     _ => false
   };
 }

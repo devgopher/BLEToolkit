@@ -1,6 +1,7 @@
 using System.Text;
 using BLE.Toolkit.Cache;
 using BLE.Toolkit.Interfaces.Receiver;
+using BLE.Toolkit.Interfaces.Transmitter;
 using BLE.Toolkit.Sample.Load.Models;
 using BLE.Toolkit.Settings;
 using BLE.Toolkit.Windows.Advertisement;
@@ -26,7 +27,7 @@ public sealed class BleLoadNodeService(
     private Task? _receiverPollTask;
 
     private WindowsBleAdvertisementReceiver? _advertisementReceiver;
-    private CentralTransmitter? _transmitter;
+    private ITransmitter? _transmitter;
     private WindowsReceiver? _receiver;
     private WindowsBleAdvertisementTransmitter? _advertisementTransmitter;
 
@@ -38,10 +39,11 @@ public sealed class BleLoadNodeService(
     public NodeStatusResponse GetStatus()
     {
         return new NodeStatusResponse(
-            _role.ToString().ToLowerInvariant(),
+            ToRoleApiValue(_role),
             _role != NodeRole.None,
-            _role == NodeRole.Transmitter
+            IsTransmitterRole(_role)
                 ? new TransmitterStatusDto(
+                    ToTransmitterMode(_role),
                     _transmitTargetCount,
                     _transmitEnqueuedCount,
                     _deviceCache.Count,
@@ -69,8 +71,11 @@ public sealed class BleLoadNodeService(
 
             switch (role)
             {
-                case NodeRole.Transmitter:
-                    await StartTransmitterRoleAsync(_cts.Token);
+                case NodeRole.CentralTransmitter:
+                    await StartCentralTransmitterRoleAsync(_cts.Token);
+                    break;
+                case NodeRole.ServerNotifyTransmitter:
+                    await StartServerNotifyTransmitterRoleAsync(_cts.Token);
                     break;
                 case NodeRole.Receiver:
                     await StartReceiverRoleAsync(_cts.Token);
@@ -91,7 +96,7 @@ public sealed class BleLoadNodeService(
 
     public async Task EnqueueTransmissionAsync(string message, int count, CancellationToken cancellationToken = default)
     {
-        if (_role != NodeRole.Transmitter)
+        if (!IsTransmitterRole(_role))
             throw new InvalidOperationException("Transmission is only available in transmitter role.");
 
         if (string.IsNullOrWhiteSpace(message))
@@ -114,11 +119,19 @@ public sealed class BleLoadNodeService(
             for (var i = 0; i < count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                _transmitter.Transmit(bytes);
+
+                // ServerNotify pushes to subscribed GATT clients and does not target
+                // discovered addresses; use a non-null address so BasicTransmitter
+                // does not wait for device-cache population.
+                if (_role == NodeRole.ServerNotifyTransmitter)
+                    _transmitter.Transmit(0, bytes);
+                else
+                    _transmitter.Transmit(bytes);
+
                 _transmitEnqueuedCount++;
             }
 
-            logger.LogInformation("Enqueued {Count} broadcast transmissions", count);
+            logger.LogInformation("Enqueued {Count} broadcast transmissions via {Mode}", count, ToTransmitterMode(_role));
         }
         finally
         {
@@ -207,7 +220,7 @@ public sealed class BleLoadNodeService(
         _gate.Dispose();
     }
 
-    private async Task StartTransmitterRoleAsync(CancellationToken cancellationToken)
+    private async Task StartCentralTransmitterRoleAsync(CancellationToken cancellationToken)
     {
         _advertisementReceiver = new WindowsBleAdvertisementReceiver(_advertisingSettings, _deviceCache);
         _transmitter = new CentralTransmitter(_transmitterSettings, _deviceCache);
@@ -223,7 +236,15 @@ public sealed class BleLoadNodeService(
         await _advertisementReceiver.StartAsync(cancellationToken);
         await _transmitter.StartAsync(cancellationToken);
 
-        logger.LogInformation("Transmitter role started: scanning and GATT central ready");
+        logger.LogInformation("Central Transmitter role started: scanning and GATT central ready");
+    }
+
+    private async Task StartServerNotifyTransmitterRoleAsync(CancellationToken cancellationToken)
+    {
+        _transmitter = new ServerNotifyTransmitter(_transmitterSettings, _deviceCache);
+        await _transmitter.StartAsync(cancellationToken);
+
+        logger.LogInformation("ServerNotify Transmitter role started: GATT server notify ready");
     }
 
     private async Task StartReceiverRoleAsync(CancellationToken cancellationToken)
@@ -308,4 +329,22 @@ public sealed class BleLoadNodeService(
         _lastTransmitMessage = null;
         _role = NodeRole.None;
     }
+
+    internal static bool IsTransmitterRole(NodeRole role) =>
+        role is NodeRole.CentralTransmitter or NodeRole.ServerNotifyTransmitter;
+
+    internal static string ToRoleApiValue(NodeRole role) => role switch
+    {
+        NodeRole.CentralTransmitter => "central",
+        NodeRole.ServerNotifyTransmitter => "servernotify",
+        NodeRole.Receiver => "receiver",
+        _ => "none"
+    };
+
+    private static string ToTransmitterMode(NodeRole role) => role switch
+    {
+        NodeRole.CentralTransmitter => "central",
+        NodeRole.ServerNotifyTransmitter => "servernotify",
+        _ => "none"
+    };
 }

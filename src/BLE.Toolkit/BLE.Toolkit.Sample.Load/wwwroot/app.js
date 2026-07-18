@@ -1,8 +1,10 @@
 const els = {
-  btnTransmitter: document.getElementById('btn-transmitter'),
+  btnCentral: document.getElementById('btn-central'),
+  btnServerNotify: document.getElementById('btn-servernotify'),
   btnReceiver: document.getElementById('btn-receiver'),
   roleStatus: document.getElementById('role-status'),
   transmitterPanel: document.getElementById('transmitter-panel'),
+  transmitterTitle: document.getElementById('transmitter-title'),
   receiverPanel: document.getElementById('receiver-panel'),
   txMessage: document.getElementById('tx-message'),
   txCount: document.getElementById('tx-count'),
@@ -13,12 +15,15 @@ const els = {
   throttleStatus: document.getElementById('throttle-status'),
   btnSend: document.getElementById('btn-send'),
   txStatus: document.getElementById('tx-status'),
+  deviceCacheSection: document.getElementById('device-cache-section'),
   txDevices: document.getElementById('tx-devices'),
   rxCount: document.getElementById('rx-count'),
   btnClear: document.getElementById('btn-clear'),
   messages: document.getElementById('messages'),
   log: document.getElementById('log')
 };
+
+const TRANSMITTER_ROLES = new Set(['central', 'servernotify']);
 
 let currentRole = 'none';
 let pollTimer = null;
@@ -49,20 +54,43 @@ async function api(path, options = {}) {
   return response.json();
 }
 
+function isTransmitterRole(role) {
+  return TRANSMITTER_ROLES.has(role);
+}
+
+function roleLabel(role) {
+  switch (role) {
+    case 'central':
+      return 'Central Transmitter (scanning + GATT write)';
+    case 'servernotify':
+      return 'ServerNotify Transmitter (GATT notify)';
+    case 'receiver':
+      return 'Receiver (GATT server + advertisement)';
+    default:
+      return 'not selected';
+  }
+}
+
+function transmitterTitle(role) {
+  switch (role) {
+    case 'central':
+      return 'Central Transmitter';
+    case 'servernotify':
+      return 'ServerNotify Transmitter';
+    default:
+      return 'Transmitter';
+  }
+}
+
 function setRoleUi(role) {
   currentRole = role;
-  els.btnTransmitter.classList.toggle('active', role === 'transmitter');
+  els.btnCentral.classList.toggle('active', role === 'central');
+  els.btnServerNotify.classList.toggle('active', role === 'servernotify');
   els.btnReceiver.classList.toggle('active', role === 'receiver');
-  els.transmitterPanel.classList.toggle('hidden', role !== 'transmitter');
+  els.transmitterPanel.classList.toggle('hidden', !isTransmitterRole(role));
   els.receiverPanel.classList.toggle('hidden', role !== 'receiver');
-
-  const label = role === 'transmitter'
-    ? 'Transmitter (scanning + GATT central)'
-    : role === 'receiver'
-      ? 'Receiver (GATT server + advertisement)'
-      : 'not selected';
-
-  els.roleStatus.textContent = `Role: ${label}`;
+  els.transmitterTitle.textContent = transmitterTitle(role);
+  els.roleStatus.textContent = `Role: ${roleLabel(role)}`;
 }
 
 function formatThrottling(throttling) {
@@ -92,14 +120,22 @@ function renderTransmitterStatus(status) {
 
   renderThrottlingControls(tx.throttling);
 
+  const modeLabel = tx.mode === 'servernotify' ? 'ServerNotify' : 'Central';
+  const showDeviceCache = tx.mode === 'central';
+
+  els.deviceCacheSection.classList.toggle('hidden', !showDeviceCache);
+
   els.txStatus.innerHTML = `
+    <div>Mode: <strong>${escapeHtml(modeLabel)}</strong></div>
     <div>Last message: <strong>${escapeHtml(tx.lastMessage ?? '—')}</strong></div>
     <div>Enqueued: <strong>${tx.enqueuedCount}</strong> / ${tx.targetCount}</div>
-    <div>Devices in cache: <strong>${tx.discoveredDevices}</strong></div>
+    ${showDeviceCache ? `<div>Devices in cache: <strong>${tx.discoveredDevices}</strong></div>` : ''}
     <div>${escapeHtml(formatThrottling(tx.throttling))}</div>
   `;
 
-  renderCachedDevices(tx.devices ?? []);
+  if (showDeviceCache) {
+    renderCachedDevices(tx.devices ?? []);
+  }
 }
 
 function renderCachedDevices(devices) {
@@ -152,7 +188,7 @@ async function refreshStatus() {
   const status = await api('/api/node/status');
   setRoleUi(status.role);
 
-  if (status.role === 'transmitter') {
+  if (isTransmitterRole(status.role)) {
     renderTransmitterStatus(status);
   }
 
@@ -183,7 +219,7 @@ async function setRole(role) {
   setRoleUi(status.role);
   log(`Active role: ${status.role}`);
 
-  if (role === 'transmitter') {
+  if (isTransmitterRole(role)) {
     await loadThrottling();
   }
 }
@@ -236,7 +272,8 @@ async function clearMessages() {
   log('Received messages cleared');
 }
 
-els.btnTransmitter.addEventListener('click', () => setRole('transmitter').catch(err => log(err.message)));
+els.btnCentral.addEventListener('click', () => setRole('central').catch(err => log(err.message)));
+els.btnServerNotify.addEventListener('click', () => setRole('servernotify').catch(err => log(err.message)));
 els.btnReceiver.addEventListener('click', () => setRole('receiver').catch(err => log(err.message)));
 els.btnThrottleApply.addEventListener('click', () => applyThrottling().catch(err => log(err.message)));
 els.btnSend.addEventListener('click', () => sendTransmission().catch(err => log(err.message)));

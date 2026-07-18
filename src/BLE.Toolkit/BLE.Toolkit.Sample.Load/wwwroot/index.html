@@ -10,20 +10,21 @@
   <main class="container">
     <header>
       <h1>BLE Toolkit Load Test</h1>
-      <p class="subtitle">Broadcast load test (same flow as Sample.Windows)</p>
+      <p class="subtitle">This is a sample for BLE transmission/receiving demo!</p>
     </header>
 
     <section class="card">
       <h2>Node Role</h2>
       <div class="role-buttons">
-        <button id="btn-transmitter" class="role-btn">Transmitter</button>
+        <button id="btn-central" class="role-btn">Central Transmitter</button>
+        <button id="btn-servernotify" class="role-btn">ServerNotify Transmitter</button>
         <button id="btn-receiver" class="role-btn">Receiver</button>
       </div>
       <div id="role-status" class="status-line">Role: not selected</div>
     </section>
 
     <section id="transmitter-panel" class="card hidden">
-      <h2>Transmitter</h2>
+      <h2 id="transmitter-title">Transmitter</h2>
       <label>
         Message
         <input id="tx-message" type="text" placeholder="Broadcast text" value="hello-ble">
@@ -58,7 +59,7 @@
 
       <button id="btn-send" class="primary">Send broadcast</button>
       <div id="tx-status" class="status-grid"></div>
-      <div class="device-cache">
+      <div id="device-cache-section" class="device-cache">
         <h3>Device cache</h3>
         <div id="tx-devices" class="device-list"></div>
       </div>
