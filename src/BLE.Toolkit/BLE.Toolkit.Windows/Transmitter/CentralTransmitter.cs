@@ -47,8 +47,18 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
 
         if (writeResult != GattCommunicationStatus.Success)
         {
-            _characteristicsResults = null;
+            ClearCache(bluetoothAddress);
+
             throw new InvalidOperationException($"GATT write failed: {writeResult}");
+        }
+    }
+
+    private void ClearCache(ulong bluetoothAddress)
+    {
+        var toDelete = _characteristicsResults.Where(c => c.Key == bluetoothAddress);
+        foreach (KeyValuePair<ulong, GattCharacteristicsResult> characteristic in toDelete)
+        {
+            _characteristicsResults.Remove(characteristic);
         }
     }
 
@@ -68,7 +78,7 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
 
         if (device == null)
         {
-            _characteristicsResults = null;
+            ClearCache(bluetoothAddress);
             throw new InvalidOperationException("BLE devices not found");
         }
 
@@ -77,17 +87,11 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
             .AsTask()
             .GetAwaiter()
             .GetResult();
-        
-        if (servicesResult == null)
-        {
-            _characteristicsResults = null;
-            throw new InvalidOperationException("GATT services not found");
-        }
 
-        if (servicesResult.Status != GattCommunicationStatus.Success || servicesResult.Services.Count == 0)
+        if (servicesResult == null || servicesResult.Status != GattCommunicationStatus.Success || servicesResult.Services.Count == 0)
         {
-            _characteristicsResults = null;
-            throw new InvalidOperationException($"GATT service not found: {servicesResult.Status}");
+            ClearCache(bluetoothAddress);
+            throw new InvalidOperationException("GATT services not found");
         }
 
         var service = servicesResult.Services[0];
@@ -101,7 +105,7 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
             || characteristicsResult.Characteristics.Count == 0)
         {
             Console.WriteLine("NF: " + Enum.GetName(characteristicsResult.Status));
-            _characteristicsResults = null;
+            ClearCache(bluetoothAddress);
             throw new InvalidOperationException($"GATT characteristic not found: {characteristicsResult.Status}");
         }
 
