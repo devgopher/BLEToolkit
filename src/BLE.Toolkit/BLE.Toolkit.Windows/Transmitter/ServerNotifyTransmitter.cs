@@ -38,22 +38,20 @@ public class ServerNotifyTransmitter : BasicBleTransmitter
 
     /// <summary>
     /// Transmits data by notifying subscribers on the local transmit characteristic.
-    /// Retries the notify operation using <c>ExecuteWithRetry</c>.
+    /// Retries the notify operation using <c>ExecuteWithRetryAsync</c>.
     /// </summary>
     /// <param name="transmitElement"></param>
-    protected override void InnerTransmit(TransmitElement transmitElement)
+    protected override async Task<bool> InnerTransmitAsync(TransmitElement transmitElement)
     {
         // If the characteristic isn't available, nothing can be transmitted.
         if (LocalTransmitCharacteristic == null)
-            return;
+            return false;
 
-        ExecuteWithRetry(() =>
+        return await ExecuteWithRetryAsync(async _ =>
         {
-            LocalTransmitCharacteristic
+            await LocalTransmitCharacteristic
                 .NotifyValueAsync(CreateBuffer(transmitElement.Data)) // Convert payload to a BLE/WinRT buffer.
-                .AsTask()
-                .GetAwaiter()
-                .GetResult();
+                .AsTask();
         });
     }
 }

@@ -63,7 +63,7 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
         return (Guid.Parse(serviceSetting.ServiceUuid), Guid.Parse(characteristicUuid));
     }
 
-    protected void ExecuteWithRetry(Action action)
+    protected async Task<bool> ExecuteWithRetryAsync(Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -75,15 +75,19 @@ public abstract class BasicBleTransmitter(IOptionsMonitor<TransmitterSettings> s
                     MaxRetryAttempts = retry.RetryCount,
                     Delay = retry.RetryDelay,
                     BackoffType = DelayBackoffType.Exponential,
-                    OnRetry = args => default
+                    OnRetry = _ => default
                 })
                 .Build();
 
-            pipeline.Execute(action);
+            await pipeline.ExecuteAsync(async token => await action(token), cancellationToken);
+
+            return true;
         }
         catch (Exception ex)
         {
-            Console.WriteLine("FF: " + ex.Message);
+            Console.WriteLine($"FF: {ex.Message}");
+
+            return false;
         }
     }
 

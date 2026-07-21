@@ -124,10 +124,8 @@ if (role == "0")
     advertisementReceiver.AdvertisementReceived += adv =>
     {
         Console.WriteLine(
-            $"ADV: {adv.LocalName} {adv.BluetoothAddress}, " +
-            $"MFCT ID: {string.Join(',', adv.ManufacturerData.Select(md => $" {md.CompanyId} "))}" +
-            $"MFCT DATA LEN: {string.Join(',', adv.ManufacturerData.Select(md => $" {md.Data.Length} "))}"
-            );
+            $"ADV: {adv.LocalName} {adv.BluetoothAddress}, MFCT ID: {string.Join(',', adv.ManufacturerData.Select(md => $" {md.CompanyId} "))}MFCT DATA LEN: {string.Join(',', adv.ManufacturerData.Select(md => $" {md.Data.Length} "))}"
+        );
     };
     
     var transmitter = new CentralTransmitter(transmitterSettings, deviceCache);

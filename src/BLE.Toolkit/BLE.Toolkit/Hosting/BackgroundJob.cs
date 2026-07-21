@@ -10,7 +10,7 @@ public sealed class BackgroundJob
 
     public bool IsRunning => _task is { IsCompleted: false };
 
-    public void Start(Action<CancellationToken> work, CancellationToken cancellationToken)
+    public void Start(Func<CancellationToken, Task> work, CancellationToken cancellationToken)
     {
         if (IsRunning)
             throw new InvalidOperationException("Background job is already running.");

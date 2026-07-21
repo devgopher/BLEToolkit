@@ -125,6 +125,8 @@ public class ExpiredList<T> : IList<T>
         get
         {
             PurgeExpired();
+            // reset timeout from this access, if you want "only on Add/Insert" remove this line:
+            _items[index].ExpireAtUtc = _utcNow().Add(_timeout);
             return _items[index].Item;
         }
         set
