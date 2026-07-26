@@ -6,6 +6,9 @@
         <Nullable>enable</Nullable>
         <SupportedOSPlatformVersion>10.0.18362.0</SupportedOSPlatformVersion>
         <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
+        <IsPackable>true</IsPackable>
+        <PackageId>BLE.Toolkit.Windows</PackageId>
+        <Description>Windows-specific BLE toolkit implementation.</Description>
     </PropertyGroup>
 
     <ItemGroup>

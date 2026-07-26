@@ -1,0 +1,21 @@
+<Project>
+    <PropertyGroup>
+        <Version>0.1.0.0-alpha1</Version>
+        <AssemblyVersion>0.1.0.0</AssemblyVersion>
+        <FileVersion>0.1.0.0</FileVersion>
+        <InformationalVersion>$(Version)</InformationalVersion>
+        <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+        <Authors>devgopher</Authors>
+        <Company>BLE Toolkit</Company>
+        <Copyright>Copyright © BLE Toolkit</Copyright>
+        <PackageProjectUrl>https://github.com/devgopher/BLEToolkit</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/devgopher/BLEToolkit.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <DebugType>portable</DebugType>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+</Project>
