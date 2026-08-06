@@ -21,16 +21,6 @@ public class WindowsBleAdvertisementTransmitter(
     IOptionsMonitor<AdvertisingSettings> advertisementSettingsMonitor)
     : IAdvertisementTransmitter
 {
-    /// <summary>
-    /// GAP AD types reserved by Windows for BluetoothLEAdvertisementPublisher.
-    /// </summary>
-    private static readonly HashSet<byte> ReservedDataTypes =
-    [
-        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
-        0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x14, 0x15, 0x16, 0x17,
-        0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x3D
-    ];
-
     private BluetoothLEAdvertisementPublisher? _advertisementPublisher;
 
     private IOptionsMonitor<AdvertisingSettings> AdvertisementSettingsMonitor { get; } =
@@ -77,8 +67,7 @@ public class WindowsBleAdvertisementTransmitter(
         if (advertising.DataSections is { Length: > 0 } dataSections)
         {
             advertisement.DataSections.AddRange(
-                dataSections
-                    .Where(d => !ReservedDataTypes.Contains(d.DataType))
+                WindowsAdvertisementHelpers.FilterPublishableDataSections(dataSections)
                     .Select(d => new BluetoothLEAdvertisementDataSection
                     {
                         DataType = d.DataType,
@@ -87,8 +76,11 @@ public class WindowsBleAdvertisementTransmitter(
         }
 
         var hasManufacturerData = advertisement.ManufacturerData.Count > 0;
-        var hasCustomDataSection = advertisement.DataSections.Any(s => !IsManufacturerSpecificSection(s));
-        if (!hasManufacturerData && !hasCustomDataSection)
+        var hasValidPayload = WindowsAdvertisementHelpers.HasValidPublisherPayload(
+            hasManufacturerData,
+            advertisement.DataSections.Select(s => s.DataType));
+
+        if (!hasValidPayload)
         {
             // A publisher with no custom payload cannot be started.
             throw new InvalidOperationException(
@@ -112,7 +104,4 @@ public class WindowsBleAdvertisementTransmitter(
 
         return data.AsBuffer();
     }
-
-    private static bool IsManufacturerSpecificSection(BluetoothLEAdvertisementDataSection section) =>
-        section.DataType == 0xFF;
 }

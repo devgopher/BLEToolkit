@@ -22,17 +22,6 @@ public class WindowsBleAdvertisementReceiver(
 
     private IOptionsMonitor<AdvertisingSettings> AdvertisementSettingsMonitor { get; } = advertisementSettingsMonitor;
 
-    private static BluetoothLEScanningMode MapScanningMode(AdvertisingMode mode)
-    {
-        return mode switch
-        {
-            AdvertisingMode.Passive => BluetoothLEScanningMode.Passive,
-            AdvertisingMode.Active or AdvertisingMode.Balanced => BluetoothLEScanningMode.Active,
-            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
-        };
-    }
-
-
     public override Task StartAsync(CancellationToken cancellationToken)
     {
         InitAdvertisementScanning();
@@ -85,7 +74,7 @@ public class WindowsBleAdvertisementReceiver(
 
         _advertisementWatcher = new BluetoothLEAdvertisementWatcher
         {
-            ScanningMode = MapScanningMode(advertising.Mode)
+            ScanningMode = WindowsAdvertisementHelpers.MapScanningMode(advertising.Mode)
         };
     }
 
