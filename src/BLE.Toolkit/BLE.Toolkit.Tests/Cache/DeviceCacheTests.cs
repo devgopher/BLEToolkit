@@ -15,8 +15,8 @@ public class DeviceCacheTests
 
         cache.Add(advertisement);
 
-        Assert.Same(advertisement, Assert.Single(cache));
-        Assert.Contains(advertisement, cache);
+        Assert.Same(advertisement, Assert.Single(cache).Value);
+        Assert.True(cache.Contains(advertisement));
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public class DeviceCacheTests
         now = now.AddSeconds(31);
 
         Assert.Empty(cache);
-        Assert.DoesNotContain(advertisement, cache);
+        Assert.False(cache.Contains(advertisement));
     }
 
     [Fact]

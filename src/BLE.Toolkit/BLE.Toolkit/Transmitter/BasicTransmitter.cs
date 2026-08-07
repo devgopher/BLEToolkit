@@ -92,8 +92,8 @@ public abstract class BasicTransmitter(IOptionsMonitor<TransmitterSettings> sett
                 // broadcast
                 foreach (var cached in deviceCache.ToArray())
                 {
-                    if (cached == null!) continue;
-                    if (await InnerTransmitAsync(transmitElement with { BluetoothAddress = cached.BluetoothAddress }))
+                    var advertisement = cached.Value;
+                    if (await InnerTransmitAsync(transmitElement with { BluetoothAddress = advertisement.BluetoothAddress }))
                         await DoRateLimitingAsync(cancellationToken);
                 }
             }

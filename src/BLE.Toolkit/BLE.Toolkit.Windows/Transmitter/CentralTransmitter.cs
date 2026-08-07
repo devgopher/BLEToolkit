@@ -9,7 +9,7 @@ namespace BLE.Toolkit.Windows.Transmitter;
 public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, DeviceCache deviceCache)
     : BasicBleTransmitter(settings, deviceCache)
 {
-    private readonly ExpiredList<KeyValuePair<ulong, GattCharacteristicsResult>>? _characteristicsResults = new(settings.CurrentValue.DeviceCache.Timeout,
+    private readonly CleanableList<KeyValuePair<ulong, GattCharacteristicsResult>>? _characteristicsResults = new(settings.CurrentValue.DeviceCache.Timeout,
         () => DateTime.UtcNow);
     
 
@@ -48,18 +48,23 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
 
     private void ClearCache(ulong bluetoothAddress)
     {
-        var toDelete = _characteristicsResults.Where(c => c.Key == bluetoothAddress);
-        foreach (KeyValuePair<ulong, GattCharacteristicsResult> characteristic in toDelete)
-        {
+        if (_characteristicsResults is null)
+            return;
+
+        var toDelete = _characteristicsResults
+            .Where(c => c.Value.Key == bluetoothAddress)
+            .Select(c => c.Value)
+            .ToList();
+
+        foreach (var characteristic in toDelete)
             _characteristicsResults.Remove(characteristic);
-        }
     }
 
     private async Task<GattCharacteristicsResult> GetCharacteristicsAsync(ulong bluetoothAddress)
     {
-        var cached = _characteristicsResults.FirstOrDefault(cr => cr.Key == bluetoothAddress);
-        if (cached.Value != null)
-            return cached.Value;
+        var cached = _characteristicsResults?.FirstOrDefault(cr => cr.Value.Key == bluetoothAddress);
+        if (cached is not null)
+            return cached.Value.Value;
             
         var (serviceUuid, characteristicUuid) = GetPrimaryUuids();
 
@@ -100,7 +105,7 @@ public class CentralTransmitter(IOptionsMonitor<TransmitterSettings> settings, D
             throw new InvalidOperationException($"GATT characteristic not found: {characteristicsResult.Status}");
         }
 
-        _characteristicsResults.Add(new KeyValuePair<ulong, GattCharacteristicsResult>(bluetoothAddress, characteristicsResult));
+        _characteristicsResults!.Add(new KeyValuePair<ulong, GattCharacteristicsResult>(bluetoothAddress, characteristicsResult));
         
         return characteristicsResult;
     }

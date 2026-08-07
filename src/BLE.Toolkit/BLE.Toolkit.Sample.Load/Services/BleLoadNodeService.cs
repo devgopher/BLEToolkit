@@ -194,9 +194,13 @@ public sealed class BleLoadNodeService(
 
     public IReadOnlyList<CachedDeviceDto> GetCachedDevices() =>
         _deviceCache
-            .Select(device => new CachedDeviceDto(
-                FormatBluetoothAddress(device.BluetoothAddress),
-                string.IsNullOrWhiteSpace(device.LocalName) ? null : device.LocalName))
+            .Select(device =>
+            {
+                var advertisement = device.Value;
+                return new CachedDeviceDto(
+                    FormatBluetoothAddress(advertisement.BluetoothAddress),
+                    string.IsNullOrWhiteSpace(advertisement.LocalName) ? null : advertisement.LocalName);
+            })
             .ToArray();
 
     private static string FormatBluetoothAddress(ulong address)

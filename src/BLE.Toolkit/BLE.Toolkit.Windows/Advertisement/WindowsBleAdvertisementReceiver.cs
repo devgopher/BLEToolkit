@@ -37,7 +37,7 @@ public class WindowsBleAdvertisementReceiver(
     private void OnAdvertisementReceived(BluetoothLEAdvertisementWatcher sender,
         BluetoothLEAdvertisementReceivedEventArgs args)
     {
-        if (deviceCache.Any(d => d.BluetoothAddress.Equals(args.BluetoothAddress)))
+        if (deviceCache.Any(d => d.Value.BluetoothAddress.Equals(args.BluetoothAddress)))
             return;
 
         var advertisement = new BleAdvertisement
