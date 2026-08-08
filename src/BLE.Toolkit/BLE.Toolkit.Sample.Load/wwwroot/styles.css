@@ -117,6 +117,23 @@ select {
   font-size: 1rem;
 }
 
+.message-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: stretch;
+}
+
+.message-row input {
+  margin-top: 0;
+  flex: 1;
+}
+
+.message-row button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .throttling {
   margin-top: 16px;
   padding-top: 16px;

@@ -7,13 +7,13 @@ namespace BLE.Toolkit.Cache;
 /// </summary>
 public class DeviceCache : CleanableList<BleAdvertisement>
 {
-    public DeviceCache(TimeSpan timeout, Func<DateTime>? utcNow = null)
-        : base(timeout, utcNow)
+    public DeviceCache(Func<DateTime>? utcNow = null)
+        : base(utcNow)
     {
     }
 
-    public DeviceCache(TimeSpan timeout, CachePopStrategy<BleAdvertisement> popStrategy, Func<DateTime>? utcNow = null)
-        : base(timeout, popStrategy, utcNow)
+    public DeviceCache(CachePopStrategy<BleAdvertisement> popStrategy, Func<DateTime>? utcNow = null)
+        : base(popStrategy, utcNow)
     {
     }
 }

@@ -10,7 +10,11 @@ public enum NodeRole
 
 public sealed record SetRoleRequest(string Role);
 
-public sealed record TransmitRequest(string Message, int Count);
+public sealed record TransmitRequest(
+    string? Message,
+    int Count,
+    bool GeneratePerTransmission = false,
+    int MessageLength = 8);
 
 public sealed record ReceivedMessageDto(int Index, string Text, DateTimeOffset ReceivedAt);
 

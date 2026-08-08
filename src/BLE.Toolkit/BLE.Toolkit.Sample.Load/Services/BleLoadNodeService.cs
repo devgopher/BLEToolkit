@@ -94,16 +94,32 @@ public sealed class BleLoadNodeService(
         }
     }
 
-    public async Task EnqueueTransmissionAsync(string message, int count, CancellationToken cancellationToken = default)
+    public async Task EnqueueTransmissionAsync(
+        string? message,
+        int count,
+        bool generatePerTransmission = false,
+        int messageLength = 8,
+        CancellationToken cancellationToken = default)
     {
         if (!IsTransmitterRole(_role))
             throw new InvalidOperationException("Transmission is only available in transmitter role.");
 
-        if (string.IsNullOrWhiteSpace(message))
-            throw new ArgumentException("Message must not be empty.", nameof(message));
-
         if (count <= 0)
             throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than zero.");
+
+        if (generatePerTransmission)
+        {
+            if (messageLength is < 5 or > 12)
+                throw new ArgumentOutOfRangeException(nameof(messageLength), "Message length must be between 5 and 12.");
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentException("Message must not be empty.", nameof(message));
+
+            if (message.Length is < 5 or > 12 || message.Any(ch => !char.IsAsciiLetterOrDigit(ch)))
+                throw new ArgumentException("Message must be 5–12 Latin letters or digits (A–Z, a–z, 0–9).", nameof(message));
+        }
 
         await _gate.WaitAsync(cancellationToken);
         try
@@ -111,32 +127,56 @@ public sealed class BleLoadNodeService(
             if (_transmitter is null)
                 throw new InvalidOperationException("Transmitter is not started.");
 
-            var bytes = Encoding.UTF8.GetBytes(message);
             _transmitTargetCount = count;
             _transmitEnqueuedCount = 0;
-            _lastTransmitMessage = message;
+            _lastTransmitMessage = null;
+
+            var fixedBytes = generatePerTransmission ? null : Encoding.UTF8.GetBytes(message!);
 
             for (var i = 0; i < count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                var payload = generatePerTransmission
+                    ? Encoding.UTF8.GetBytes(GenerateMessage(messageLength))
+                    : fixedBytes!;
+
+                if (generatePerTransmission)
+                    _lastTransmitMessage = Encoding.UTF8.GetString(payload);
+                else
+                    _lastTransmitMessage = message;
+
                 // ServerNotify pushes to subscribed GATT clients and does not target
                 // discovered addresses; use a non-null address so BasicTransmitter
                 // does not wait for device-cache population.
                 if (_role == NodeRole.ServerNotifyTransmitter)
-                    _transmitter.Transmit(0, bytes);
+                    _transmitter.Transmit(0, payload);
                 else
-                    _transmitter.Transmit(bytes);
+                    _transmitter.Transmit(payload);
 
                 _transmitEnqueuedCount++;
             }
 
-            logger.LogInformation("Enqueued {Count} broadcast transmissions via {Mode}", count, ToTransmitterMode(_role));
+            logger.LogInformation(
+                "Enqueued {Count} broadcast transmissions via {Mode} (generatePerTransmission={GeneratePerTransmission})",
+                count,
+                ToTransmitterMode(_role),
+                generatePerTransmission);
         }
         finally
         {
             _gate.Release();
         }
+    }
+
+    private static string GenerateMessage(int length)
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        return string.Create(length, alphabet, static (span, chars) =>
+        {
+            for (var i = 0; i < span.Length; i++)
+                span[i] = chars[Random.Shared.Next(chars.Length)];
+        });
     }
 
     public ReceiverMessagesResponse GetMessages(int skip, int take) =>

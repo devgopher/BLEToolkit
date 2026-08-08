@@ -30,5 +30,5 @@ public class WindowsBleAdvertisementReceiverTests
     private static WindowsBleAdvertisementReceiver CreateReceiver(AdvertisingSettings settings) =>
         new(
             new OptionsMonitorStub<AdvertisingSettings>(settings),
-            new DeviceCache(TimeSpan.FromMinutes(1)));
+            new DeviceCache());
 }

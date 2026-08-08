@@ -7,6 +7,9 @@ const els = {
   transmitterTitle: document.getElementById('transmitter-title'),
   receiverPanel: document.getElementById('receiver-panel'),
   txMessage: document.getElementById('tx-message'),
+  txMessageLength: document.getElementById('tx-message-length'),
+  txGeneratePerTransmission: document.getElementById('tx-generate-per-transmission'),
+  btnGenerateMessage: document.getElementById('btn-generate-message'),
   txCount: document.getElementById('tx-count'),
   throttleEnabled: document.getElementById('throttle-enabled'),
   throttlePeriod: document.getElementById('throttle-period'),
@@ -27,8 +30,12 @@ const TRANSMITTER_ROLES = new Set(['central', 'servernotify']);
 
 let currentRole = 'none';
 let pollTimer = null;
+let logEnabled = false;
+let transmitterStatusUpdatesEnabled = false;
 
 function log(message) {
+  if (!logEnabled) return;
+
   const time = new Date().toLocaleTimeString();
   els.log.textContent = `[${time}] ${message}\n` + els.log.textContent;
 }
@@ -110,15 +117,19 @@ function renderThrottlingControls(throttling) {
   els.throttleStatus.textContent = formatThrottling(throttling);
 }
 
-function renderTransmitterStatus(status) {
+function renderTransmitterStatus(status, { syncControls = false, syncDevices = false } = {}) {
   const tx = status.transmitter;
   if (!tx) {
     els.txStatus.textContent = '';
-    els.txDevices.textContent = '';
+    if (syncDevices) {
+      els.txDevices.textContent = '';
+    }
     return;
   }
 
-  renderThrottlingControls(tx.throttling);
+  if (syncControls) {
+    renderThrottlingControls(tx.throttling);
+  }
 
   const modeLabel = tx.mode === 'servernotify' ? 'ServerNotify' : 'Central';
   const showDeviceCache = tx.mode === 'central';
@@ -133,7 +144,7 @@ function renderTransmitterStatus(status) {
     <div>${escapeHtml(formatThrottling(tx.throttling))}</div>
   `;
 
-  if (showDeviceCache) {
+  if (syncDevices && showDeviceCache) {
     renderCachedDevices(tx.devices ?? []);
   }
 }
@@ -184,11 +195,48 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;');
 }
 
+const MESSAGE_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const MESSAGE_PATTERN = /^[A-Za-z0-9]{5,12}$/;
+
+function clampMessageLength(value) {
+  const length = Number(value);
+  if (!Number.isFinite(length)) return 8;
+  return Math.min(12, Math.max(5, Math.trunc(length)));
+}
+
+function generateMessage(length = clampMessageLength(els.txMessageLength.value)) {
+  const size = clampMessageLength(length);
+  const chars = new Array(size);
+  const randomValues = new Uint32Array(size);
+  crypto.getRandomValues(randomValues);
+
+  for (let i = 0; i < size; i++) {
+    chars[i] = MESSAGE_ALPHABET[randomValues[i] % MESSAGE_ALPHABET.length];
+  }
+
+  return chars.join('');
+}
+
+function validateMessage(message) {
+  if (!MESSAGE_PATTERN.test(message)) {
+    return 'Message must be 5–12 Latin letters or digits (A–Z, a–z, 0–9)';
+  }
+
+  return null;
+}
+
+function fillGeneratedMessage() {
+  const length = clampMessageLength(els.txMessageLength.value);
+  els.txMessageLength.value = String(length);
+  els.txMessage.value = generateMessage(length);
+}
+
 async function refreshStatus() {
   const status = await api('/api/node/status');
   setRoleUi(status.role);
 
   if (isTransmitterRole(status.role)) {
+    if (!transmitterStatusUpdatesEnabled) return;
     renderTransmitterStatus(status);
   }
 
@@ -203,8 +251,14 @@ async function loadThrottling() {
   renderThrottlingControls(throttling);
 }
 
+function stopPolling() {
+  if (!pollTimer) return;
+  clearInterval(pollTimer);
+  pollTimer = null;
+}
+
 function startPolling() {
-  if (pollTimer) clearInterval(pollTimer);
+  if (pollTimer) return;
   pollTimer = setInterval(() => {
     refreshStatus().catch(err => log(`Poll error: ${err.message}`));
   }, 1000);
@@ -220,8 +274,23 @@ async function setRole(role) {
   log(`Active role: ${status.role}`);
 
   if (isTransmitterRole(role)) {
+    transmitterStatusUpdatesEnabled = false;
+    stopPolling();
+    els.txStatus.textContent = '';
+    els.txDevices.textContent = '';
+    els.deviceCacheSection.classList.toggle('hidden', role !== 'central');
     await loadThrottling();
+    return;
   }
+
+  if (role === 'receiver') {
+    transmitterStatusUpdatesEnabled = false;
+    startPolling();
+    await refreshStatus();
+    return;
+  }
+
+  stopPolling();
 }
 
 async function applyThrottling() {
@@ -244,26 +313,46 @@ async function applyThrottling() {
 }
 
 async function sendTransmission() {
+  const generatePerTransmission = els.txGeneratePerTransmission.checked;
+  const messageLength = clampMessageLength(els.txMessageLength.value);
   const message = els.txMessage.value.trim();
   const count = Number(els.txCount.value);
 
-  if (!message) {
-    log('Enter a message');
-    return;
+  els.txMessageLength.value = String(messageLength);
+
+  if (!generatePerTransmission) {
+    const messageError = validateMessage(message);
+    if (messageError) {
+      logEnabled = true;
+      log(messageError);
+      return;
+    }
   }
 
   if (!Number.isFinite(count) || count < 1) {
+    logEnabled = true;
     log('Transmission count must be >= 1');
     return;
   }
 
-  log(`Broadcast: "${message}" x ${count}`);
+  logEnabled = true;
+  transmitterStatusUpdatesEnabled = true;
+  log(generatePerTransmission
+    ? `Broadcast: random ${messageLength}-char messages x ${count}`
+    : `Broadcast: "${message}" x ${count}`);
+
   const status = await api('/api/transmitter/send', {
     method: 'POST',
-    body: JSON.stringify({ message, count })
+    body: JSON.stringify({
+      message: generatePerTransmission ? null : message,
+      count,
+      generatePerTransmission,
+      messageLength
+    })
   });
-  renderTransmitterStatus(status);
+  renderTransmitterStatus(status, { syncDevices: true });
   log(`Enqueued ${status.transmitter?.enqueuedCount ?? 0} transmissions`);
+  startPolling();
 }
 
 async function clearMessages() {
@@ -276,9 +365,23 @@ els.btnCentral.addEventListener('click', () => setRole('central').catch(err => l
 els.btnServerNotify.addEventListener('click', () => setRole('servernotify').catch(err => log(err.message)));
 els.btnReceiver.addEventListener('click', () => setRole('receiver').catch(err => log(err.message)));
 els.btnThrottleApply.addEventListener('click', () => applyThrottling().catch(err => log(err.message)));
+els.btnGenerateMessage.addEventListener('click', fillGeneratedMessage);
 els.btnSend.addEventListener('click', () => sendTransmission().catch(err => log(err.message)));
 els.btnClear.addEventListener('click', () => clearMessages().catch(err => log(err.message)));
 
-startPolling();
-loadThrottling().catch(err => log(`Startup throttling: ${err.message}`));
-refreshStatus().catch(err => log(`Startup: ${err.message}`));
+function syncMessageInputState() {
+  const generatePerTransmission = els.txGeneratePerTransmission.checked;
+  els.txMessage.disabled = generatePerTransmission;
+  els.btnGenerateMessage.disabled = generatePerTransmission;
+}
+
+els.txGeneratePerTransmission.addEventListener('change', syncMessageInputState);
+syncMessageInputState();
+
+els.txMessage.addEventListener('input', () => {
+  els.txMessage.value = els.txMessage.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 12);
+});
+
+els.txMessageLength.addEventListener('change', () => {
+  els.txMessageLength.value = String(clampMessageLength(els.txMessageLength.value));
+});

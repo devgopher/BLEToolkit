@@ -6,34 +6,20 @@ public class CleanableList<T> : IEnumerable<CachedProxy<T>>
     where T : notnull
 {
     private readonly Dictionary<T, Entry<T>> _items;
-    private readonly TimeSpan _timeout;
     private readonly Func<DateTime> _utcNow;
     private readonly CachePopStrategy<T>? _popStrategy;
 
-    public CleanableList(int timeout, Func<DateTime>? utcNow = null, IEqualityComparer<T>? comparer = null)
-        : this(TimeSpan.FromSeconds(timeout), utcNow, comparer)
+    public CleanableList(Func<DateTime>? utcNow = null, IEqualityComparer<T>? comparer = null)
     {
-    }
-
-    public CleanableList(TimeSpan timeout, Func<DateTime>? utcNow = null, IEqualityComparer<T>? comparer = null)
-        : this(timeout, popStrategy: null, utcNow, comparer)
-    {
-    }
-
-    public CleanableList(int timeout, CachePopStrategy<T> popStrategy, Func<DateTime>? utcNow = null,
-        IEqualityComparer<T>? comparer = null)
-        : this(TimeSpan.FromSeconds(timeout), popStrategy, utcNow, comparer)
-    {
-    }
-
-    public CleanableList(TimeSpan timeout, CachePopStrategy<T>? popStrategy, Func<DateTime>? utcNow = null,
-        IEqualityComparer<T>? comparer = null)
-    {
-        if (timeout <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(timeout));
-        _timeout = timeout;
-        _popStrategy = popStrategy;
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
         _items = new Dictionary<T, Entry<T>>(comparer);
+    }
+
+    public CleanableList(CachePopStrategy<T> popStrategy, Func<DateTime>? utcNow = null,
+        IEqualityComparer<T>? comparer = null)
+        : this(utcNow, comparer)
+    {
+        _popStrategy = popStrategy;
     }
 
     public bool Add(T item)
@@ -41,14 +27,13 @@ public class CleanableList<T> : IEnumerable<CachedProxy<T>>
         PurgeExpired();
         if (item is null) return false;
 
-        var expireAt = _utcNow().Add(_timeout);
         if (_items.TryGetValue(item, out var existing))
         {
-            existing.ExpireAtUtc = expireAt;
+            existing.ExpireAtUtc = default;
             return false;
         }
 
-        _items[item] = new Entry<T>(item, expireAt);
+        _items[item] = new Entry<T>(item, default);
         return true;
     }
 

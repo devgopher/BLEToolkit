@@ -26,8 +26,20 @@
     <section id="transmitter-panel" class="card hidden">
       <h2 id="transmitter-title">Transmitter</h2>
       <label>
-        Message
-        <input id="tx-message" type="text" placeholder="Broadcast text" value="hello-ble">
+        Message (5–12 Latin letters or digits)
+        <div class="message-row">
+          <input id="tx-message" type="text" minlength="5" maxlength="12" pattern="[A-Za-z0-9]{5,12}"
+                 placeholder="e.g. Ab12cd" value="hello1" spellcheck="false" autocomplete="off">
+          <button id="btn-generate-message" type="button" class="secondary">Generate</button>
+        </div>
+      </label>
+      <label>
+        Message length
+        <input id="tx-message-length" type="number" min="5" max="12" value="8">
+      </label>
+      <label class="checkbox-row">
+        <input id="tx-generate-per-transmission" type="checkbox">
+        Generate a new message for each transmission
       </label>
       <label>
         Transmission count

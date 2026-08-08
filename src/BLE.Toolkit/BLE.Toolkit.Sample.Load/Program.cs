@@ -52,7 +52,12 @@ app.MapPost("/api/transmitter/send", async (TransmitRequest request, BleLoadNode
 {
   try
   {
-    await node.EnqueueTransmissionAsync(request.Message, request.Count, ct);
+    await node.EnqueueTransmissionAsync(
+      request.Message,
+      request.Count,
+      request.GeneratePerTransmission,
+      request.MessageLength,
+      ct);
     return Results.Ok(node.GetStatus());
   }
   catch (InvalidOperationException ex)

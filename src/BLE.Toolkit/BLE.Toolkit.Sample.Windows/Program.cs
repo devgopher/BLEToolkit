@@ -8,7 +8,7 @@ using BLE.Toolkit.Windows.Transmitter;
 
 var serviceGuid = "0497947e-a031-491b-b1a0-163d605003d5";
 var gattCharId = "16b7c725-ac93-4d29-b10e-039042971498";
-var deviceCache = new DeviceCache(TimeSpan.FromSeconds(30));
+var deviceCache = new DeviceCache();
 var transmitterSettings = new OptionsMock<TransmitterSettings>(new TransmitterSettings
 {
     ProtocolVersion = ProtocolVersion.BLE5,
